@@ -57,13 +57,27 @@ jobs:
       APP_DOMAIN: ${{ vars.APP_DOMAIN }}
       DOCKER_IMAGE: ghcr.io/${{ github.repository }}:latest
       NEXT_PUBLIC_APP_URL: https://${{ vars.APP_DOMAIN }}
-      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
       NOTION_DATABASE_ID: ${{ vars.NOTION_DATABASE_ID }}
+      
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
       REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    
+    - name: Validate required secrets
+      run: |
+        if [ -z "$NOTION_TOKEN" ]; then
+          echo "❌ NOTION_TOKEN secret is not set or is empty"
+          exit 1
+        fi
+        if [ -z "$REVALIDATE_SECRET" ]; then
+          echo "❌ REVALIDATE_SECRET secret is not set or is empty"
+          exit 1
+        fi
+        echo "✅ All required secrets are set"
     
     - name: Copy docker-compose template to server
       uses: appleboy/scp-action@v0.1.7
