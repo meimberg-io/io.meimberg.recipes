@@ -54,6 +54,7 @@ function getCountryCode(icon: string): string {
 
 interface RecipeCardProps {
   recipe: Recipe
+  onClick?: () => void
 }
 
 const categoryColors: Record<string, string> = {
@@ -78,14 +79,22 @@ const notionColorMap: Record<string, string> = {
   'red': 'bg-red-600/20 border-red-600/30',
 }
 
-export default function RecipeCard({ recipe }: RecipeCardProps) {
+export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
   const cardColor = recipe.categoryColor 
     ? (notionColorMap[recipe.categoryColor] || categoryColors[recipe.category] || 'bg-gray-800 border-gray-700')
     : (categoryColors[recipe.category] || 'bg-gray-800 border-gray-700')
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault()
+      onClick()
+    }
+  }
+
   return (
     <Link
       href={`/recipes/${recipe.slug}`}
+      onClick={handleClick}
       className={`group block rounded-lg overflow-hidden hover:opacity-90 transition-opacity border ${cardColor}`}
     >
       {/* Image with flag overlay */}

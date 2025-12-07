@@ -6,9 +6,10 @@ interface RecipeGridProps {
   recipes: Recipe[]
   category: Category
   showSubCategories?: boolean
+  onRecipeClick?: (recipe: Recipe) => void
 }
 
-export default function RecipeGrid({ recipes, category, showSubCategories = false }: RecipeGridProps) {
+export default function RecipeGrid({ recipes, category, showSubCategories = false, onRecipeClick }: RecipeGridProps) {
   if (recipes.length === 0) {
     return (
       <div className="text-center py-12">
@@ -51,7 +52,11 @@ export default function RecipeGrid({ recipes, category, showSubCategories = fals
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 {grouped[groupKey].map((recipe) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
+                  <RecipeCard 
+                    key={recipe.id} 
+                    recipe={recipe} 
+                    onClick={() => onRecipeClick?.(recipe)}
+                  />
                 ))}
               </div>
             </div>
@@ -67,7 +72,11 @@ export default function RecipeGrid({ recipes, category, showSubCategories = fals
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 px-8 py-6">
       {sortedRecipes.map((recipe) => (
-        <RecipeCard key={recipe.id} recipe={recipe} />
+        <RecipeCard 
+          key={recipe.id} 
+          recipe={recipe} 
+          onClick={() => onRecipeClick?.(recipe)}
+        />
       ))}
     </div>
   )
