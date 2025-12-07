@@ -40,7 +40,7 @@ export function getFrontendCategory(notionCategory: string): {
   subCategory?: SubCategory
 } {
   for (const [frontendCat, config] of Object.entries(categoryConfig)) {
-    if (config.notionCategories.includes(notionCategory)) {
+    if ((config.notionCategories as readonly string[]).includes(notionCategory)) {
       // Check if this Notion category is a subcategory
       if (config.subCategories?.includes(notionCategory as SubCategory)) {
         return {
