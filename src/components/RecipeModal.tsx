@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import type { Recipe } from '@/types/recipe'
 import ReactCountryFlag from 'react-country-flag'
@@ -53,6 +53,7 @@ export default function RecipeModal({ recipe, onClose }: RecipeModalProps) {
   const [fullRecipe, setFullRecipe] = useState<Recipe | null>(recipe)
   const [loading, setLoading] = useState(false)
 
+  // Handle overflow when recipe changes
   useEffect(() => {
     if (recipe) {
       document.body.style.overflow = 'hidden'
@@ -73,10 +74,14 @@ export default function RecipeModal({ recipe, onClose }: RecipeModalProps) {
       document.body.style.overflow = 'unset'
       setFullRecipe(null)
     }
+  }, [recipe])
+
+  // Handle overflow cleanup on unmount
+  useEffect(() => {
     return () => {
       document.body.style.overflow = 'unset'
     }
-  }, [recipe])
+  }, [])
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
