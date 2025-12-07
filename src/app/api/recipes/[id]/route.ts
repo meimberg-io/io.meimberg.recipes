@@ -3,10 +3,11 @@ import { getRecipeById } from '@/lib/notion-recipe'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const recipe = await getRecipeById(params.id)
+    const { id } = await params
+    const recipe = await getRecipeById(id)
     if (!recipe) {
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 })
     }
