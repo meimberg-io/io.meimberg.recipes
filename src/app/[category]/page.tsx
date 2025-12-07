@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import CategoryTabs from '@/components/CategoryTabs'
 import RecipeGrid from '@/components/RecipeGrid'
+import RecipeModal from '@/components/RecipeModal'
 import type { Recipe, Category } from '@/types/recipe'
 import { hasSubCategories, getFrontendCategories } from '@/config/categories'
 import { getCategoryFromSlug, getSlugFromCategory } from '@/config/navigation'
@@ -18,6 +19,8 @@ export default function CategoryPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     fetch('/api/recipes')
@@ -32,6 +35,32 @@ export default function CategoryPage() {
         setLoading(false)
       })
   }, [])
+
+  // Handle recipe selection from URL or search params
+  useEffect(() => {
+    const recipeSlug = searchParams.get('recipe')
+    if (recipeSlug && recipes.length > 0) {
+      const recipe = recipes.find((r: Recipe) => r.slug === recipeSlug)
+      setSelectedRecipe(recipe || null)
+    } else {
+      setSelectedRecipe(null)
+    }
+  }, [searchParams, recipes])
+
+  // Handle browser back/forward
+  useEffect(() => {
+    const handlePopState = () => {
+      const recipeSlug = new URLSearchParams(window.location.search).get('recipe')
+      if (recipeSlug && recipes.length > 0) {
+        const recipe = recipes.find((r: Recipe) => r.slug === recipeSlug)
+        setSelectedRecipe(recipe || null)
+      } else {
+        setSelectedRecipe(null)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [recipes])
 
   useEffect(() => {
     setFilteredRecipes(recipes.filter((r) => r.category === category))
@@ -62,6 +91,11 @@ export default function CategoryPage() {
     )
   }
 
+  const handleCloseModal = () => {
+    setSelectedRecipe(null)
+    router.replace(`/${categorySlug}`, { scroll: false })
+  }
+
   return (
     <main className="min-h-screen bg-gray-900 text-white">
       <Header />
@@ -74,7 +108,17 @@ export default function CategoryPage() {
         recipes={filteredRecipes}
         category={category}
         showSubCategories={needsSubCategories}
+        onRecipeClick={(recipe) => {
+          setSelectedRecipe(recipe)
+          router.push(`/${categorySlug}?recipe=${recipe.slug}`, { scroll: false })
+        }}
       />
+      {selectedRecipe && (
+        <RecipeModal
+          recipe={selectedRecipe}
+          onClose={handleCloseModal}
+        />
+      )}
     </main>
   )
 }

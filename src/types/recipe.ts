@@ -30,8 +30,7 @@ export interface Recipe {
   categoryColor?: string
   url?: string
   tags?: string[]
-  ingredients?: string
-  cookingSteps?: string
+  content?: any[] // All richtext blocks from Notion page (preserves formatting)
   slug: string
 }
 

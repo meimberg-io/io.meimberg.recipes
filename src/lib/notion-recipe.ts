@@ -225,52 +225,22 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
     const slug = getSlug(title, page.id)
     const categoryColor = getSelectColor(props['Kategorie'])
 
-    const blocks = await notion.blocks.children.list({ block_id: id })
+    // Fetch all blocks and preserve richtext structure
+    let allBlocks: any[] = []
+    let cursor: string | undefined = undefined
     
-    let ingredients: string[] = []
-    let cookingSteps: string[] = []
-    let currentSection: 'ingredients' | 'steps' | null = null
+    do {
+      const response = await notion.blocks.children.list({ 
+        block_id: id,
+        start_cursor: cursor,
+        page_size: 100
+      })
+      allBlocks = [...allBlocks, ...response.results]
+      cursor = response.next_cursor || undefined
+    } while (cursor)
     
-    for (const block of blocks.results) {
-      if ('type' in block) {
-        const blockType = block.type
-        
-        // Check for headings that indicate sections
-        if (blockType === 'heading_1' || blockType === 'heading_2' || blockType === 'heading_3') {
-          const heading = getRichText({ rich_text: block[blockType]?.rich_text || [] })
-          const headingLower = heading.toLowerCase()
-          
-          if (headingLower.includes('zutat') || headingLower.includes('ingredient')) {
-            currentSection = 'ingredients'
-          } else if (headingLower.includes('zubereitung') || headingLower.includes('anleitung') || headingLower.includes('cooking') || headingLower.includes('preparation')) {
-            currentSection = 'steps'
-          } else {
-            currentSection = null
-          }
-          continue
-        }
-        
-        // Parse content based on block type
-        let content = ''
-        if (blockType === 'paragraph') {
-          content = getRichText({ rich_text: block.paragraph?.rich_text || [] })
-        } else if (blockType === 'bulleted_list_item') {
-          content = '• ' + getRichText({ rich_text: block.bulleted_list_item?.rich_text || [] })
-        } else if (blockType === 'numbered_list_item') {
-          content = getRichText({ rich_text: block.numbered_list_item?.rich_text || [] })
-        } else if (blockType === 'to_do') {
-          content = (block.to_do?.checked ? '✓ ' : '☐ ') + getRichText({ rich_text: block.to_do?.rich_text || [] })
-        }
-        
-        if (content) {
-          if (currentSection === 'ingredients') {
-            ingredients.push(content)
-          } else if (currentSection === 'steps') {
-            cookingSteps.push(content)
-          }
-        }
-      }
-    }
+    // Return blocks as-is to preserve richtext formatting
+    const content = allBlocks.length > 0 ? allBlocks : undefined
 
     return {
       id: page.id,
@@ -278,7 +248,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
       description,
       category,
       subCategory: subCategory as 'Hauptgerichte' | 'Pasta' | 'Special' | undefined,
-      notionCategory, // Store original Notion category
+      notionCategory,
       vegetarian,
       coverImage,
       coverImageFocalPoint,
@@ -287,8 +257,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
       slug,
       pageIcon,
       categoryColor,
-      ingredients: ingredients.join('\n'),
-      cookingSteps: cookingSteps.join('\n'),
+      content: content,
     }
   } catch (error) {
     console.error('Error fetching recipe:', error)
