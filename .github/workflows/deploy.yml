@@ -1,0 +1,131 @@
+name: Build and Deploy Recipes
+
+on:
+  push:
+    branches: [ main, master ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix={{branch}}-
+          type=semver,pattern={{version}}
+          type=raw,value=latest
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          NEXT_PUBLIC_APP_URL=https://${{ vars.APP_DOMAIN }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    env:
+      PROJECT_NAME: recipes
+      APP_DOMAIN: ${{ vars.APP_DOMAIN }}
+      DOCKER_IMAGE: ghcr.io/${{ github.repository }}:latest
+      NEXT_PUBLIC_APP_URL: https://${{ vars.APP_DOMAIN }}
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      NOTION_DATABASE_ID: ${{ vars.NOTION_DATABASE_ID }}
+      REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Copy docker-compose template to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ vars.SERVER_HOST }}
+        username: ${{ vars.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "docker-compose.prod.yml"
+        target: "/srv/projects/${{ env.PROJECT_NAME }}/"
+    
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ vars.SERVER_HOST }}
+        username: ${{ vars.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        envs: PROJECT_NAME,GITHUB_TOKEN,DOCKER_IMAGE,APP_DOMAIN,NEXT_PUBLIC_APP_URL,NOTION_TOKEN,NOTION_DATABASE_ID,REVALIDATE_SECRET
+        script: |
+          set -e
+          
+          # Login to GitHub Container Registry
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          
+          # Create project directory
+          mkdir -p /srv/projects/${PROJECT_NAME}
+          cd /srv/projects/${PROJECT_NAME}
+          
+          # Create .env file with secrets
+          cat > .env << EOF
+          NODE_ENV=production
+          PORT=5680
+          HOSTNAME=0.0.0.0
+          NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+          NOTION_TOKEN=$NOTION_TOKEN
+          NOTION_DATABASE_ID=$NOTION_DATABASE_ID
+          REVALIDATE_SECRET=$REVALIDATE_SECRET
+          EOF
+          
+          # Substitute variables in docker-compose template
+          export PROJECT_NAME="${PROJECT_NAME}"
+          export DOCKER_IMAGE="${DOCKER_IMAGE}"
+          export APP_DOMAIN="${APP_DOMAIN}"
+          
+          envsubst < docker-compose.prod.yml > docker-compose.yml
+          
+          echo "Generated docker-compose.yml:"
+          cat docker-compose.yml
+          
+          # Pull latest image and deploy
+          docker compose pull
+          docker compose up -d
+          
+          # Wait for container to be ready
+          sleep 5
+          
+          # Verify deployment
+          if docker ps | grep -q ${PROJECT_NAME}; then
+            echo "✅ ${PROJECT_NAME} deployed successfully!"
+            echo "🌐 Accessible at: https://${{ env.APP_DOMAIN }}"
+          else
+            echo "❌ Deployment failed - container not running"
+            docker logs ${PROJECT_NAME}
+            exit 1
+          fi
+
