@@ -12,31 +12,35 @@ export default function RichText({ richText }: RichTextProps) {
   return (
     <>
       {richText.map((text, index) => {
-        let content: any = text.plain_text || ''
+        let content: React.ReactNode = text.plain_text || ''
         const annotations = text.annotations || {}
         
-        // Apply formatting in order: code, bold, italic, strikethrough, underline
+        // Apply formatting in order: inner to outer
+        // Code should be innermost (applied first)
         if (annotations.code) {
-          content = <code key={`code-${index}`} className="bg-gray-800 px-1 rounded text-sm font-mono">{content}</code>
+          content = <code className="bg-gray-800 px-1 rounded text-sm font-mono">{content}</code>
         }
+        // Then bold
         if (annotations.bold) {
-          content = <strong key={`bold-${index}`}>{content}</strong>
+          content = <strong>{content}</strong>
         }
+        // Then italic
         if (annotations.italic) {
-          content = <em key={`italic-${index}`}>{content}</em>
+          content = <em>{content}</em>
         }
+        // Then strikethrough
         if (annotations.strikethrough) {
-          content = <del key={`del-${index}`}>{content}</del>
+          content = <del>{content}</del>
         }
+        // Then underline
         if (annotations.underline) {
-          content = <u key={`u-${index}`}>{content}</u>
+          content = <u>{content}</u>
         }
         
-        // Links wrap everything
+        // Links wrap everything (outermost)
         if (text.href) {
           content = (
             <a 
-              key={`link-${index}`}
               href={text.href} 
               target="_blank" 
               rel="noopener noreferrer"
@@ -47,6 +51,7 @@ export default function RichText({ richText }: RichTextProps) {
           )
         }
         
+        // Only the Fragment has a key
         return <Fragment key={index}>{content}</Fragment>
       })}
     </>
