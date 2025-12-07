@@ -25,9 +25,14 @@ COPY . .
 # Accept build arguments for Next.js public environment variables
 # These are needed at build time for static page generation
 ARG NEXT_PUBLIC_APP_URL
+ARG NOTION_TOKEN
 
 # Set environment variables from build args
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NOTION_TOKEN=$NOTION_TOKEN
+
+# Ensure public directory exists before build
+RUN mkdir -p ./public
 
 RUN npm run build
 
@@ -42,7 +47,8 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+# Copy public directory
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
