@@ -15,14 +15,20 @@ function getNotionClient(): Client {
   return notionClient
 }
 
-export const notion = new Proxy({} as Client, {
-  get(_target, prop) {
-    const client = getNotionClient()
-    const value = (client as any)[prop]
-    if (typeof value === 'function') {
-      return value.bind(client)
-    }
-    return value
+// Lazy initialization - only creates client when actually used (at runtime, not build time)
+// This prevents build-time errors when NOTION_TOKEN is not available during Docker build
+export const notion = {
+  get databases() {
+    return getNotionClient().databases
   },
-})
+  get pages() {
+    return getNotionClient().pages
+  },
+  get blocks() {
+    return getNotionClient().blocks
+  },
+  get users() {
+    return getNotionClient().users
+  },
+} as Client
 

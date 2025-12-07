@@ -2,14 +2,14 @@ import { notion } from './notion'
 import type { Recipe, Category, VegetarianOption } from '@/types/recipe'
 import { getFrontendCategory } from '@/config/categories'
 
-const DATABASE_ID = process.env.NOTION_DATABASE_ID
-
-if (!DATABASE_ID) {
-  throw new Error('NOTION_DATABASE_ID is not set')
+// Lazy initialization - only check when actually used (at runtime, not build time)
+function getDatabaseId(): string {
+  const databaseId = process.env.NOTION_DATABASE_ID
+  if (!databaseId) {
+    throw new Error('NOTION_DATABASE_ID is not set')
+  }
+  return databaseId
 }
-
-// Type assertion after check
-const NOTION_DATABASE_ID: string = DATABASE_ID
 
 // Category mapping is now handled by getFrontendCategory from config/categories.ts
 
@@ -115,7 +115,7 @@ function getPageIcon(page: any): string | undefined {
 export async function getRecipes(): Promise<Recipe[]> {
   try {
     const response = await notion.databases.query({
-      database_id: NOTION_DATABASE_ID,
+      database_id: getDatabaseId(),
       filter: {
         property: 'Speisekarte',
         checkbox: {
