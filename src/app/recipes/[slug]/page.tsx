@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import CategoryTabs from '@/components/CategoryTabs'
+import NotionContent from '@/components/NotionContent'
 import type { Category, Recipe } from '@/types/recipe'
 import { getSlugFromCategory } from '@/config/navigation'
 
@@ -216,41 +217,10 @@ export default function RecipePage() {
               </div>
             </div>
 
-            {/* Ingredients */}
-            {recipe.ingredients && (
+            {/* Content */}
+            {recipe.content && Array.isArray(recipe.content) && recipe.content.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-4">Zutaten</h2>
-                <ul className="space-y-2 text-gray-300">
-                  {recipe.ingredients.split('\n').filter(line => line.trim()).map((line, index) => {
-                    // Remove existing bullet if present
-                    const cleanLine = line.trim().replace(/^[•\-\*]\s*/, '')
-                    return (
-                      <li key={index} className="flex items-start">
-                        <span className="mr-2">•</span>
-                        <span>{cleanLine}</span>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
-
-            {/* Cooking Steps */}
-            {recipe.cookingSteps && (
-              <div>
-                <h2 className="text-2xl font-bold mb-4">Zubereitung</h2>
-                <ul className="space-y-2 text-gray-300">
-                  {recipe.cookingSteps.split('\n').filter(line => line.trim()).map((line, index) => {
-                    // Remove existing bullet if present
-                    const cleanLine = line.trim().replace(/^[•\-\*]\s*/, '')
-                    return (
-                      <li key={index} className="flex items-start">
-                        <span className="mr-2">•</span>
-                        <span>{cleanLine}</span>
-                      </li>
-                    )
-                  })}
-                </ul>
+                <NotionContent blocks={recipe.content} />
               </div>
             )}
           </div>

@@ -65,7 +65,7 @@ export async function GET() {
 
   // Step 2: Test API connection
   try {
-    await notion.users.me()
+    await notion.users.me({})
     results.push({
       step: 'API Connection',
       status: 'success',
@@ -95,7 +95,7 @@ export async function GET() {
       status: 'success',
       message: 'Successfully accessed the database',
       data: {
-        title: database.title?.[0]?.plain_text || 'Untitled',
+        title: ('title' in database && database.title?.[0]?.plain_text) || 'Untitled',
         properties: Object.keys(database.properties || {}),
       },
     })

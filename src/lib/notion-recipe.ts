@@ -8,6 +8,9 @@ if (!DATABASE_ID) {
   throw new Error('NOTION_DATABASE_ID is not set')
 }
 
+// Type assertion after check
+const NOTION_DATABASE_ID: string = DATABASE_ID
+
 // Category mapping is now handled by getFrontendCategory from config/categories.ts
 
 function getVegetarianOption(value: string): VegetarianOption | undefined {
@@ -112,7 +115,7 @@ function getPageIcon(page: any): string | undefined {
 export async function getRecipes(): Promise<Recipe[]> {
   try {
     const response = await notion.databases.query({
-      database_id: DATABASE_ID,
+      database_id: NOTION_DATABASE_ID,
       filter: {
         property: 'Speisekarte',
         checkbox: {
@@ -149,7 +152,8 @@ export async function getRecipes(): Promise<Recipe[]> {
 
         if (!speisekarte || !title) continue
 
-        const { url: coverImage, focalPoint: coverImageFocalPoint } = getCoverImage(page.cover)
+        const cover = 'cover' in page ? page.cover : null
+        const { url: coverImage, focalPoint: coverImageFocalPoint } = getCoverImage(cover)
         const pageIcon = getPageIcon(page)
         const slug = getSlug(title, page.id)
         
