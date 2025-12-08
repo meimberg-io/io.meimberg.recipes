@@ -1,124 +1,74 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import Header from '@/components/Header'
-import CategoryTabs from '@/components/CategoryTabs'
-import RecipeGrid from '@/components/RecipeGrid'
-import RecipeModal from '@/components/RecipeModal'
+import CategoryTabsClient from '@/components/CategoryTabsClient'
+import RecipeGridClient from '@/components/RecipeGridClient'
 import type { Recipe, Category } from '@/types/recipe'
 import { hasSubCategories, getFrontendCategories } from '@/config/categories'
-import { getCategoryFromSlug, getSlugFromCategory } from '@/config/navigation'
+import { getCategoryFromSlug, navigationTabs } from '@/config/navigation'
+import { getRecipes } from '@/lib/notion-recipe'
 
-export default function CategoryPage() {
-  const params = useParams()
-  const router = useRouter()
-  const categorySlug = params.category as string
-  const category: Category = getCategoryFromSlug(categorySlug) || 'Hauptspeisen'
+interface CategoryPageProps {
+  params: Promise<{ category: string }>
+}
+
+// Generate static params for all categories at build time
+export async function generateStaticParams() {
+  return navigationTabs.map((tab) => ({
+    category: tab.slug,
+  }))
+}
+
+// Force static generation - pages are pre-rendered at build time
+export const dynamic = 'force-static'
+export const dynamicParams = false
+
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const { category: categorySlug } = await params
+  const category: Category | null = getCategoryFromSlug(categorySlug) ?? null
   
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    fetch('/api/recipes')
-      .then((res) => res.json())
-      .then((data) => {
-        setRecipes(data)
-        setFilteredRecipes(data.filter((r: Recipe) => r.category === category))
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error('Error fetching recipes:', err)
-        setLoading(false)
-      })
-  }, [])
-
-  // Handle recipe selection from URL or search params
-  useEffect(() => {
-    const recipeSlug = searchParams.get('recipe')
-    if (recipeSlug && recipes.length > 0) {
-      const recipe = recipes.find((r: Recipe) => r.slug === recipeSlug)
-      setSelectedRecipe(recipe || null)
-    } else {
-      setSelectedRecipe(null)
-    }
-  }, [searchParams, recipes])
-
-  // Handle browser back/forward
-  useEffect(() => {
-    const handlePopState = () => {
-      const recipeSlug = new URLSearchParams(window.location.search).get('recipe')
-      if (recipeSlug && recipes.length > 0) {
-        const recipe = recipes.find((r: Recipe) => r.slug === recipeSlug)
-        setSelectedRecipe(recipe || null)
-      } else {
-        setSelectedRecipe(null)
-      }
-    }
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [recipes])
-
-  useEffect(() => {
-    setFilteredRecipes(recipes.filter((r) => r.category === category))
-  }, [category, recipes])
-
-  const handleCategoryChange = (newCategory: Category) => {
-    const slug = getSlugFromCategory(newCategory)
-    if (slug) {
-      router.push(`/${slug}`)
-    }
+  return {
+    title: category ? `${category} - Bei Meimbergs` : 'Bei Meimbergs - Rezepte',
+    description: category ? `Unsere ${category} Rezepte` : 'Unsere Rezeptsammlung',
   }
+}
+
+export default async function CategoryPage({ params }: CategoryPageProps) {
+  const { category: categorySlug } = await params
+  const category: Category | null = getCategoryFromSlug(categorySlug) ?? null
+  
+  if (!category) {
+    notFound()
+  }
+
+  // Fetch recipes server-side on each request
+  const allRecipes = await getRecipes()
+  
+  // Filter recipes for this category
+  const filteredRecipes = allRecipes.filter((r: Recipe) => r.category === category)
 
   // Get all categories that have recipes (from config)
   const allCategories = getFrontendCategories()
   const categories: Category[] = allCategories.filter((cat) => 
-    recipes.some((r) => r.category === cat)
+    allRecipes.some((r: Recipe) => r.category === cat)
   ) as Category[]
 
   // Check if this category has subcategories configured
   const needsSubCategories = hasSubCategories(category) && 
-    recipes.some((r) => r.category === category && r.subCategory)
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <p className="text-gray-400">Lade Rezepte...</p>
-      </main>
-    )
-  }
-
-  const handleCloseModal = () => {
-    setSelectedRecipe(null)
-    router.replace(`/${categorySlug}`, { scroll: false })
-  }
+    allRecipes.some((r: Recipe) => r.category === category && r.subCategory)
 
   return (
     <main className="min-h-screen bg-gray-900 text-white">
       <Header />
-      <CategoryTabs
+      <CategoryTabsClient
         categories={categories}
-        activeCategory={category as Category}
-        onCategoryChange={handleCategoryChange}
+        activeCategory={category}
       />
-      <RecipeGrid 
+      <RecipeGridClient
         recipes={filteredRecipes}
         category={category}
         showSubCategories={needsSubCategories}
-        onRecipeClick={(recipe) => {
-          setSelectedRecipe(recipe)
-          router.push(`/${categorySlug}?recipe=${recipe.slug}`, { scroll: false })
-        }}
       />
-      {selectedRecipe && (
-        <RecipeModal
-          recipe={selectedRecipe}
-          onClose={handleCloseModal}
-        />
-      )}
     </main>
   )
 }

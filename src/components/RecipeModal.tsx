@@ -50,31 +50,46 @@ interface RecipeModalProps {
 }
 
 export default function RecipeModal({ recipe, onClose }: RecipeModalProps) {
-  const [fullRecipe, setFullRecipe] = useState<Recipe | null>(recipe)
+  const [fullRecipe, setFullRecipe] = useState<Recipe | null>(null)
   const [loading, setLoading] = useState(false)
+  const fetchedIdRef = useRef<string | null>(null)
 
-  // Handle overflow when recipe changes
+  // Handle overflow and fetch - track by recipe.id, not object reference
   useEffect(() => {
     if (recipe) {
       document.body.style.overflow = 'hidden'
+      
+      // Skip if we already fetched this exact recipe
+      if (fetchedIdRef.current === recipe.id) {
+        return
+      }
+      
       // Fetch full recipe details with content
       setLoading(true)
+      fetchedIdRef.current = recipe.id
+      
       fetch(`/api/recipes/${recipe.id}`)
         .then((res) => res.json())
         .then((data) => {
-          setFullRecipe(data)
-          setLoading(false)
+          // Only update if this is still the current recipe
+          if (fetchedIdRef.current === recipe.id) {
+            setFullRecipe(data)
+            setLoading(false)
+          }
         })
         .catch((err) => {
           console.error('Error fetching full recipe:', err)
-          setFullRecipe(recipe) // Fallback to basic recipe
-          setLoading(false)
+          if (fetchedIdRef.current === recipe.id) {
+            setFullRecipe(recipe) // Fallback to basic recipe
+            setLoading(false)
+          }
         })
     } else {
       document.body.style.overflow = 'unset'
       setFullRecipe(null)
+      fetchedIdRef.current = null
     }
-  }, [recipe])
+  }, [recipe?.id]) // Only re-run when recipe ID changes
 
   // Handle overflow cleanup on unmount
   useEffect(() => {

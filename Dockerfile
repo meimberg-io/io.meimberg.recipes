@@ -26,10 +26,12 @@ COPY . .
 # These are needed at build time for static page generation
 ARG NEXT_PUBLIC_APP_URL
 ARG NOTION_TOKEN
+ARG NOTION_DATABASE_ID
 
 # Set environment variables from build args
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NOTION_TOKEN=$NOTION_TOKEN
+ENV NOTION_DATABASE_ID=$NOTION_DATABASE_ID
 
 # Ensure public directory exists before build
 RUN mkdir -p ./public

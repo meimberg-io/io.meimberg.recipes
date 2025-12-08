@@ -1,5 +1,3 @@
-'use client'
-
 import RichText from './RichText'
 
 interface NotionContentProps {

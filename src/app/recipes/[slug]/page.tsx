@@ -1,230 +1,210 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import Header from '@/components/Header'
-import CategoryTabs from '@/components/CategoryTabs'
+import ReactCountryFlag from 'react-country-flag'
 import NotionContent from '@/components/NotionContent'
-import type { Category, Recipe } from '@/types/recipe'
+import Header from '@/components/Header'
+import CategoryTabsClient from '@/components/CategoryTabsClient'
+import ExternalLinkIcon from '@/components/ExternalLinkIcon'
+import type { Recipe, Category } from '@/types/recipe'
+import { getRecipes, getRecipeBySlug } from '@/lib/notion-recipe'
 import { getSlugFromCategory } from '@/config/navigation'
+import { getFrontendCategories } from '@/config/categories'
 
-export default function RecipePage() {
-  const params = useParams()
-  const slug = params.slug as string
+// Map flag emojis to country codes
+const flagToCountryCode: Record<string, string> = {
+  '🇷🇺': 'RU', '🇺🇸': 'US', '🇮🇳': 'IN', '🇫🇷': 'FR', '🇲🇽': 'MX',
+  '🇩🇪': 'DE', '🇨🇳': 'CN', '🇬🇷': 'GR', '🇮🇹': 'IT', '🇹🇭': 'TH',
+  '🇭🇺': 'HU', '🇬🇧': 'GB', '🇪🇸': 'ES', '🇵🇹': 'PT', '🇯🇵': 'JP',
+  '🇰🇷': 'KR', '🇻🇳': 'VN', '🇹🇷': 'TR', '🇵🇱': 'PL', '🇨🇿': 'CZ',
+  '🇦🇹': 'AT', '🇨🇭': 'CH', '🇧🇪': 'BE', '🇳🇱': 'NL', '🇩🇰': 'DK',
+  '🇸🇪': 'SE', '🇳🇴': 'NO', '🇫🇮': 'FI', '🇷🇴': 'RO',
+}
+
+interface RecipePageProps {
+  params: Promise<{ slug: string }>
+}
+
+// Generate static params for all recipes at build time
+export async function generateStaticParams() {
+  const recipes = await getRecipes()
+  return recipes.map((recipe: Recipe) => ({
+    slug: recipe.slug,
+  }))
+}
+
+// Force static generation - pages are pre-rendered at build time
+export const dynamic = 'force-static'
+export const dynamicParams = false
+
+export async function generateMetadata({ params }: RecipePageProps): Promise<Metadata> {
+  const { slug } = await params
+  const recipe = await getRecipeBySlug(slug)
   
-  const [recipe, setRecipe] = useState<Recipe | null>(null)
-  const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/recipes').then((res) => res.json()),
-    ]).then(([recipes]) => {
-      setAllRecipes(recipes)
-      const found = recipes.find((r: Recipe) => r.slug === slug)
-      setRecipe(found || null)
-      setLoading(false)
-    })
-  }, [slug])
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <p className="text-gray-400">Lade Rezept...</p>
-      </main>
-    )
+  if (!recipe) {
+    return {
+      title: 'Rezept nicht gefunden - Bei Meimbergs',
+    }
   }
+
+  return {
+    title: `${recipe.title} - Bei Meimbergs`,
+    description: recipe.description || `Rezept: ${recipe.title}`,
+    openGraph: {
+      title: recipe.title,
+      description: recipe.description || `Rezept: ${recipe.title}`,
+      images: recipe.coverImage ? [recipe.coverImage] : [],
+    },
+  }
+}
+
+export default async function RecipePage({ params }: RecipePageProps) {
+  const { slug } = await params
+  const recipe = await getRecipeBySlug(slug)
 
   if (!recipe) {
-    return (
-      <main className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-400 mb-4">Rezept nicht gefunden</p>
-          <Link href="/" className="text-blue-400 hover:underline">
-            Zurück zur Übersicht
-          </Link>
-        </div>
-      </main>
-    )
+    notFound()
   }
 
-  const categories: Category[] = [
-    'Frühstück',
-    'Vorspeisen',
-    'Hauptspeisen',
-    'Suppen',
-    'Nachspeisen',
-  ].filter((cat) => allRecipes.some((r) => r.category === cat)) as Category[]
+  // Get all recipes to determine which categories have content
+  const allRecipes = await getRecipes()
+  const allCategories = getFrontendCategories()
+  const categories: Category[] = allCategories.filter((cat) => 
+    allRecipes.some((r: Recipe) => r.category === cat)
+  ) as Category[]
+
+  // Get the category slug for the back link
+  const categorySlug = getSlugFromCategory(recipe.category)
 
   return (
     <main className="min-h-screen bg-gray-900 text-white">
-      <div className="flex">
-        {/* Left Sidebar */}
-        <aside className="w-80 flex-shrink-0 border-r border-gray-800 h-screen overflow-y-auto">
-          <div className="sticky top-0">
-            <Header />
-            <CategoryTabs
-              categories={categories}
-              activeCategory={recipe.category}
-              onCategoryChange={(cat) => {
-                const slug = getSlugFromCategory(cat)
-                if (slug) {
-                  window.location.href = `/${slug}`
-                }
-              }}
-            />
-            
-            {/* Recipe List */}
-            <div className="px-4 py-4 space-y-2">
-              {allRecipes
-                .filter((r) => r.category === recipe.category)
-                .map((r) => (
-                  <Link
-                    key={r.id}
-                    href={`/recipes/${r.slug}`}
-                    className={`
-                      block p-3 rounded-lg transition-colors
-                      ${
-                        r.id === recipe.id
-                          ? 'bg-gray-700'
-                          : 'bg-gray-800 hover:bg-gray-700'
-                      }
-                    `}
-                  >
-                    {r.coverImage && (
-                      <div className="relative w-full aspect-[5/4] mb-2 rounded overflow-hidden">
-                        <Image
-                          src={r.coverImage}
-                          alt={r.title}
-                          fill
-                          className="object-cover"
-                          style={{
-                            objectPosition: r.coverImageFocalPoint
-                              ? `${r.coverImageFocalPoint.x * 100}% ${r.coverImageFocalPoint.y * 100}%`
-                              : 'center',
-                          }}
-                          sizes="300px"
-                        />
-                      </div>
-                    )}
-                    <h4 className="font-medium text-sm mb-1">{r.title}</h4>
-                    <p className="text-xs text-gray-400 line-clamp-2">
-                      {r.description}
-                    </p>
-                    {r.vegetarian && (
-                      <span className="inline-block mt-2 px-2 py-0.5 bg-green-600/20 text-green-400 text-xs rounded-full">
-                        {r.vegetarian}
-                      </span>
-                    )}
-                  </Link>
-                ))}
+      <Header />
+      <CategoryTabsClient
+        categories={categories}
+        activeCategory={recipe.category}
+      />
+      
+      <div className="relative max-w-4xl mx-auto px-8 py-8">
+        {/* Back icon - positioned outside content column on larger screens */}
+        <Link 
+          href={categorySlug ? `/${categorySlug}` : '/'}
+          className="absolute left-0 top-8 -translate-x-full pr-4 hidden lg:flex items-center justify-center w-12 h-12 text-gray-400 hover:text-white transition-colors"
+          title={`Zurück zu ${recipe.category}`}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="w-8 h-8"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 8 8 12 12 16" />
+            <line x1="16" y1="12" x2="8" y2="12" />
+          </svg>
+        </Link>
+
+        {/* Back link - visible on smaller screens */}
+        <Link 
+          href={categorySlug ? `/${categorySlug}` : '/'}
+          className="inline-flex lg:hidden items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
+        >
+          <span>←</span>
+          <span>Zurück zu {recipe.category}</span>
+        </Link>
+
+        {/* Recipe Image with Flag overlay */}
+        <div className="relative mb-8">
+          {recipe.coverImage && (
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+              <Image
+                src={recipe.coverImage}
+                alt={recipe.title}
+                fill
+                className="object-cover"
+                style={{
+                  objectPosition: recipe.coverImageFocalPoint
+                    ? `${recipe.coverImageFocalPoint.x * 100}% ${recipe.coverImageFocalPoint.y * 100}%`
+                    : 'center',
+                }}
+                sizes="(max-width: 768px) 100vw, 800px"
+              />
             </div>
+          )}
+
+          {/* Flag icon overlapping the bottom of the cover image */}
+          {recipe.pageIcon && (() => {
+            const icon = recipe.pageIcon.trim()
+            const countryCode = flagToCountryCode[icon] || (/^[A-Z]{2,3}$/i.test(icon) ? icon.toUpperCase() : null)
             
-            <footer className="px-4 py-4 text-xs text-gray-500 border-t border-gray-800">
-              Erstellt von meimberg.io
-            </footer>
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-8 py-8">
-            {/* Recipe Image */}
-            {recipe.coverImage && (
-              <div className="relative w-full aspect-video mb-8 rounded-lg overflow-hidden">
-                <Image
-                  src={recipe.coverImage}
-                  alt={recipe.title}
-                  fill
-                  className="object-cover"
-                  style={{
-                    objectPosition: recipe.coverImageFocalPoint
-                      ? `${recipe.coverImageFocalPoint.x * 100}% ${recipe.coverImageFocalPoint.y * 100}%`
-                      : 'center',
-                  }}
-                  sizes="(max-width: 768px) 100vw, 800px"
-                />
-              </div>
-            )}
-
-            {/* Title */}
-            <h1 className="text-4xl font-bold mb-6">{recipe.title}</h1>
-
-            {/* Metadata */}
-            <div className="space-y-3 mb-8">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400 text-sm">Kategorie:</span>
-                <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
-                  {recipe.category}
-                </span>
-              </div>
-              
-              {recipe.description && (
-                <div className="flex items-start gap-2">
-                  <span className="text-gray-400 text-sm">Kurzbeschreibung:</span>
-                  <span className="text-gray-300 text-sm">{recipe.description}</span>
+            if (countryCode) {
+              return (
+                <div className="absolute bottom-0 right-8 translate-y-1/2 z-10">
+                  <div className="rounded-md overflow-hidden border border-white/10 shadow-lg" style={{ width: '4em', height: '3em', lineHeight: 0 }}>
+                    <ReactCountryFlag 
+                      countryCode={countryCode} 
+                      svg={true}
+                      style={{ width: '100%', height: '100%', display: 'block' }}
+                    />
+                  </div>
                 </div>
-              )}
-
-              {recipe.vegetarian && (
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400 text-sm">Vegetarisch:</span>
-                  <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
-                    {recipe.vegetarian}
-                  </span>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400 text-sm">Speisekarte:</span>
-                <span className="text-gray-300 text-sm">✔</span>
+              )
+            }
+            
+            // Fallback: display as emoji/icon
+            return (
+              <div className="absolute bottom-0 left-0 translate-y-1/2 z-10">
+                <span className="text-4xl">{icon}</span>
               </div>
-
-              {recipe.url && (
-                <div className="flex items-start gap-2">
-                  <span className="text-gray-400 text-sm">URL:</span>
-                  <a
-                    href={recipe.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:underline text-sm break-all"
-                  >
-                    {recipe.url}
-                  </a>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400 text-sm">Tags:</span>
-                <span className="text-gray-300 text-sm">
-                  {recipe.tags && recipe.tags.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {recipe.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    'Leer'
-                  )}
-                </span>
-              </div>
-            </div>
-
-            {/* Content */}
-            {recipe.content && Array.isArray(recipe.content) && recipe.content.length > 0 && (
-              <div className="mb-8">
-                <NotionContent blocks={recipe.content} />
-              </div>
-            )}
-          </div>
+            )
+          })()}
         </div>
+
+        {/* Title with URL icon */}
+        <div className="flex items-start justify-between gap-4 mb-2 mt-16 ">
+          <h1 className="text-4xl font-bold">{recipe.title}</h1>
+          {recipe.url && (
+            <ExternalLinkIcon url={recipe.url} className="mt-2" />
+          )}
+        </div>
+
+        {/* Description - italic, no label */}
+        {recipe.description && (
+          <p className="text-lg text-gray-300 italic mb-6">{recipe.description}</p>
+        )}
+
+        {/* Tags (merged with vegetarian) */}
+        {((recipe.tags && recipe.tags.length > 0) || recipe.vegetarian) && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {recipe.vegetarian && (
+              <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
+                {recipe.vegetarian}
+              </span>
+            )}
+            {recipe.tags?.map((tag) => (
+              <span
+                key={tag}
+                className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Delimiter */}
+        <hr className="border-gray-800 border-b mb-8 mt-12" />
+
+        {/* Content */}
+        {recipe.content && Array.isArray(recipe.content) && recipe.content.length > 0 && (
+          <div className="mb-8">
+            <NotionContent blocks={recipe.content} />
+          </div>
+        )}
       </div>
     </main>
   )

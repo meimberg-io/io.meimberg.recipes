@@ -1,0 +1,36 @@
+# Local docker-compose.yml for testing in a prod-like environment
+# Usage: docker compose --env-file .env.local up --build
+# Or create a symlink: ln -s .env.local .env
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:5680}
+        NOTION_TOKEN: ${NOTION_TOKEN}
+        NOTION_DATABASE_ID: ${NOTION_DATABASE_ID}
+    container_name: recipes-app
+    restart: unless-stopped
+    ports:
+      - "5680:5680"
+    # Load environment variables from .env.local file (for runtime)
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=5680
+      - HOSTNAME=0.0.0.0
+    networks:
+      - recipes-network
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:5680', (r) => {process.exit(r.statusCode < 500 ? 0 : 1)}).on('error', () => process.exit(1))\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  recipes-network:
+    driver: bridge

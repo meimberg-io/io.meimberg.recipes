@@ -16,37 +16,37 @@ export const navigationTabs: NavigationTab[] = [
     id: 'Frühstück',
     label: 'Frühstück',
     slug: 'fruehstueck',
-    icon: '☰',
+    icon: '🥐',
   },
   {
     id: 'Vorspeisen',
     label: 'Vorspeisen',
     slug: 'vorspeisen',
-    icon: '☰',
+    icon: '🥗',
   },
   {
     id: 'Hauptspeisen',
     label: 'Hauptspeisen',
     slug: 'hauptspeisen',
-    icon: '☰',
+    icon: '🍽️',
   },
   {
     id: 'Suppen',
     label: 'Suppen',
     slug: 'suppen',
-    icon: '☰',
+    icon: '🍲',
   },
   {
     id: 'Nachspeisen',
     label: 'Nachspeisen',
     slug: 'nachspeisen',
-    icon: '☰',
+    icon: '🍰',
   },
   {
     id: 'Dessert',
     label: 'Dessert',
     slug: 'dessert',
-    icon: '☰',
+    icon: '🧁',
   },
 ]
 
