@@ -150,14 +150,6 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
           {recipe.description}
         </p>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1">
-          {recipe.vegetarian && (
-            <span className="px-1.5 py-0.5 bg-green-600/30 text-green-300 text-xs rounded">
-              {recipe.vegetarian}
-            </span>
-          )}
-        </div>
       </div>
     </Link>
   )

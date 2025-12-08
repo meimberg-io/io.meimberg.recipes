@@ -1,6 +1,42 @@
 import { notion } from './notion'
-import type { Recipe, Category, VegetarianOption } from '@/types/recipe'
+import type { Recipe, Category } from '@/types/recipe'
 import { getFrontendCategory } from '@/config/categories'
+
+// Throttle utility to prevent rate limiting DURING BUILD ONLY
+// At runtime, requests are infrequent and don't need throttling
+// Delay between API calls (in milliseconds)
+function getApiDelay(): number {
+  const delay = process.env.NOTION_API_DELAY_MS
+  return delay ? parseInt(delay, 10) : 200
+}
+
+// Check if we're in build phase (static generation)
+// NEXT_PHASE is set by Next.js during build
+function isBuildPhase(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build'
+}
+
+// Global throttle queue - only active during build
+let lastApiCallTime = 0
+const apiDelay = getApiDelay()
+
+async function throttleApiCall<T>(apiCall: () => Promise<T>): Promise<T> {
+  // Only throttle during build to prevent Notion rate limiting
+  // At runtime, execute immediately
+  if (!isBuildPhase()) {
+    return apiCall()
+  }
+  
+  const now = Date.now()
+  const timeSinceLastCall = now - lastApiCallTime
+  
+  if (timeSinceLastCall < apiDelay) {
+    await new Promise(resolve => setTimeout(resolve, apiDelay - timeSinceLastCall))
+  }
+  
+  lastApiCallTime = Date.now()
+  return apiCall()
+}
 
 // Lazy initialization - only check when actually used (at runtime, not build time)
 function getDatabaseId(): string {
@@ -13,14 +49,6 @@ function getDatabaseId(): string {
 
 // Category mapping is now handled by getFrontendCategory from config/categories.ts
 
-function getVegetarianOption(value: string): VegetarianOption | undefined {
-  const options: VegetarianOption[] = [
-    'vegetarisch',
-    'teilweise vegetarisch',
-    'Vegetarische Option Verfügbar',
-  ]
-  return options.find(o => o === value) as VegetarianOption | undefined
-}
 
 function getSlug(title: string, id: string): string {
   return title
@@ -114,15 +142,18 @@ function getPageIcon(page: any): string | undefined {
 
 export async function getRecipes(): Promise<Recipe[]> {
   try {
-    const response = await notion.databases.query({
-      database_id: getDatabaseId(),
-      filter: {
-        property: 'Speisekarte',
-        checkbox: {
-          equals: true,
+    // Throttle: serialize API call to prevent rate limiting
+    const response = await throttleApiCall(() =>
+      notion.databases.query({
+        database_id: getDatabaseId(),
+        filter: {
+          property: 'Speisekarte',
+          checkbox: {
+            equals: true,
+          },
         },
-      },
-    })
+      })
+    )
 
     const recipes: Recipe[] = []
     
@@ -143,9 +174,7 @@ export async function getRecipes(): Promise<Recipe[]> {
         const description = getRichText(props['Kurzbeschreibung'])
         const notionCategory = getSelectValue(props['Kategorie']) || ''
         const { category, subCategory } = getFrontendCategory(notionCategory)
-        const vegetarian = getVegetarianOption(
-          getSelectValue(props['Vegetarisch']) || ''
-        )
+        const vegetarian = getSelectValue(props['Vegetarisch'])
         const url = getUrl(props['URL'])
         const tags = getMultiSelect(props['Tags'])
         const speisekarte = getCheckbox(props['Speisekarte'])
@@ -156,23 +185,7 @@ export async function getRecipes(): Promise<Recipe[]> {
         const { url: coverImage, focalPoint: coverImageFocalPoint } = getCoverImage(cover)
         const pageIcon = getPageIcon(page)
         const slug = getSlug(title, page.id)
-        
-        // Get category color from database property if available
         const categoryColor = getSelectColor(props['Kategorie'])
-        
-        // Debug logging - log all properties for first Hauptspeisen recipe
-        if (category === 'Hauptspeisen' && recipes.length === 0) {
-          console.log('First Hauptspeisen recipe properties:', {
-            title,
-            allProps: Object.keys(props),
-            props: Object.entries(props).map(([key, val]) => ({
-              key,
-              type: val?.type,
-              select: val?.select,
-              multi_select: val?.multi_select,
-            }))
-          })
-        }
 
         recipes.push({
           id: page.id,
@@ -202,7 +215,10 @@ export async function getRecipes(): Promise<Recipe[]> {
 
 export async function getRecipeById(id: string): Promise<Recipe | null> {
   try {
-    const page = await notion.pages.retrieve({ page_id: id })
+    // Throttle: serialize API call to prevent rate limiting
+    const page = await throttleApiCall(() =>
+      notion.pages.retrieve({ page_id: id })
+    )
     
     if (!('properties' in page)) {
       return null
@@ -213,9 +229,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
     const description = getRichText(props['Kurzbeschreibung'])
     const notionCategory = getSelectValue(props['Kategorie']) || ''
     const { category, subCategory } = getFrontendCategory(notionCategory)
-    const vegetarian = getVegetarianOption(
-      getSelectValue(props['Vegetarisch']) || ''
-    )
+    const vegetarian = getSelectValue(props['Vegetarisch'])
     const url = getUrl(props['URL'])
     const tags = getMultiSelect(props['Tags'])
     const speisekarte = getCheckbox(props['Speisekarte'])
@@ -234,11 +248,14 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
     let cursor: string | undefined = undefined
     
     do {
-      const response = await notion.blocks.children.list({ 
-        block_id: id,
-        start_cursor: cursor,
-        page_size: 100
-      })
+      // Throttle: serialize each API call to prevent rate limiting
+      const response = await throttleApiCall(() =>
+        notion.blocks.children.list({ 
+          block_id: id,
+          start_cursor: cursor,
+          page_size: 100
+        })
+      )
       allBlocks = [...allBlocks, ...response.results]
       cursor = response.next_cursor || undefined
     } while (cursor)
@@ -271,6 +288,13 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
 
 export async function getRecipeBySlug(slug: string): Promise<Recipe | null> {
   const recipes = await getRecipes()
-  return recipes.find(r => r.slug === slug) || null
+  const recipe = recipes.find(r => r.slug === slug)
+  
+  if (!recipe) {
+    return null
+  }
+
+  // Fetch full recipe with content using getRecipeById
+  return await getRecipeById(recipe.id)
 }
 

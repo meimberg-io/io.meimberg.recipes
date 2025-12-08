@@ -18,7 +18,7 @@ export default function CategoryTabs({
   )
 
   return (
-    <nav className="flex gap-2 px-8 py-4 bg-gray-900 border-b border-gray-800 overflow-x-auto">
+    <nav className="sticky top-0 z-10 flex gap-2 px-8 py-4 bg-gray-900 border-b border-gray-800 overflow-x-auto">
       {availableTabs.map((tab) => (
         <button
           key={tab.id}

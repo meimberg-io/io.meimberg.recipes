@@ -2,6 +2,11 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Ensure static pages are properly generated and cached
+  experimental: {
+    // Optimize static generation
+    optimizePackageImports: ['@notionhq/client'],
+  },
   images: {
     remotePatterns: [
       {

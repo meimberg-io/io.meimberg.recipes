@@ -11,11 +11,6 @@ export type SubCategory =
   | 'Pasta'
   | 'Special'
 
-export type VegetarianOption =
-  | 'vegetarisch'
-  | 'teilweise vegetarisch'
-  | 'Vegetarische Option Verfügbar'
-
 export interface Recipe {
   id: string
   title: string
@@ -23,7 +18,7 @@ export interface Recipe {
   category: Category
   subCategory?: SubCategory
   notionCategory?: string // Original category name from Notion
-  vegetarian?: VegetarianOption
+  vegetarian?: string // Dynamic value from Notion
   coverImage?: string
   coverImageFocalPoint?: { x: number; y: number } // Focal point from Notion (0-1 range)
   pageIcon?: string // Emoji or icon URL
