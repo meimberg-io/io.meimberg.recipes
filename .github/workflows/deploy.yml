@@ -48,6 +48,7 @@ jobs:
         build-args: |
           NEXT_PUBLIC_APP_URL=https://${{ vars.APP_DOMAIN }}
           NOTION_TOKEN=${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID=${{ vars.NOTION_DATABASE_ID }}
 
   deploy:
     needs: build-and-push
