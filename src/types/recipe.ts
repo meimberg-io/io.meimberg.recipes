@@ -5,6 +5,7 @@ export type Category =
   | 'Suppen'
   | 'Nachspeisen'
   | 'Dessert'
+  | 'Komponenten'
 
 export type SubCategory = 
   | 'Hauptgerichte'

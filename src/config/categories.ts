@@ -30,6 +30,10 @@ export const categoryConfig = {
     notionCategories: ['Dessert', 'Desserts'],
     subCategories: undefined,
   },
+  'Komponenten': {
+    notionCategories: ['Komponenten'],
+    subCategories: undefined,
+  },
 } as const
 
 /**

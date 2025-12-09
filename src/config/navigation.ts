@@ -48,6 +48,12 @@ export const navigationTabs: NavigationTab[] = [
     slug: 'dessert',
     icon: '🧁',
   },
+  {
+    id: 'Komponenten',
+    label: 'Komponenten',
+    slug: 'komponenten',
+    icon: '🧩',
+  },
 ]
 
 /**
