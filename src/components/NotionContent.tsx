@@ -71,7 +71,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
       closeList()
       const richText = block.heading_1?.rich_text || []
       elements.push(
-        <h2 key={blockId} className="text-2xl font-bold text-white mb-2">
+        <h2 key={blockId} className="text-2xl font-bold text-white mb-2 pt-6">
           <RichText richText={richText} />
         </h2>
       )
@@ -81,7 +81,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
       closeList()
       const richText = block.heading_2?.rich_text || []
       elements.push(
-        <h3 key={blockId} className="text-xl font-bold text-white mb-2">
+        <h3 key={blockId} className="text-xl font-bold text-white mb-2 pt-6">
           <RichText richText={richText} />
         </h3>
       )
@@ -120,7 +120,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
       const richText = block.bulleted_list_item?.rich_text || []
       itemCounter++
       currentList.items.push(
-        <li key={`${currentList.listId}-item-${itemCounter}`} className="text-gray-300">
+        <li key={`${currentList.listId}-item-${itemCounter}`} className="text-gray-300 marker:text-grey-400">
           <RichText richText={richText} />
         </li>
       )
@@ -133,7 +133,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
         const ListTag = currentList.type === 'bulleted' ? 'ul' : 'ol'
         const listClass = currentList.type === 'bulleted'
           ? 'list-disc list-inside ml-4 space-y-1 text-gray-300'
-          : 'list-decimal list-inside ml-4 space-y-1 text-gray-300'
+          : 'list-decimal list-outside ml-4 space-y-1 text-gray-300'
         elements.push(
           <ListTag key={currentList.listId} className={listClass}>
             {currentList.items}
@@ -149,7 +149,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
       const richText = block.numbered_list_item?.rich_text || []
       itemCounter++
       currentList.items.push(
-        <li key={`${currentList.listId}-item-${itemCounter}`} className="text-gray-300">
+        <li key={`${currentList.listId}-item-${itemCounter}`} className="text-gray-300 ml-4 pl-2 marker:text-grey-400 marker:font-bold">
           <RichText richText={richText} />
         </li>
       )
@@ -184,7 +184,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
     const ListTag = list.type === 'bulleted' ? 'ul' : 'ol'
     const listClass = list.type === 'bulleted'
       ? 'list-disc list-inside ml-4 space-y-1 text-gray-300'
-      : 'list-decimal list-inside ml-4 space-y-1 text-gray-300'
+      : 'list-decimal list-outside ml-4 space-y-1 text-gray-300'
     elements.push(
       <ListTag key={list.listId} className={listClass}>
         {list.items}

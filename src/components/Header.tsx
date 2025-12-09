@@ -10,7 +10,7 @@ export default function Header() {
         {HEADER_TYPE === 'video' ? (
           // Looping video background
           <video
-            src="/header_01.mp4"
+            src="/header/header_01.mp4"
             autoPlay
             loop
             muted
@@ -20,7 +20,7 @@ export default function Header() {
         ) : (
           // Static image background
           <Image
-            src="/header_02.jpg"
+            src="/header/header_02.jpg"
             alt="Header"
             fill
             className="object-cover"
