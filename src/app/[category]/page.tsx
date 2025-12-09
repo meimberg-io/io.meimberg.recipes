@@ -22,7 +22,7 @@ export async function generateStaticParams() {
 // ISR: Pages are pre-rendered at build time, but can be regenerated on-demand via revalidatePath
 // Revalidate every 1 year (31536000 seconds) - pages stay static unless explicitly revalidated
 export const revalidate = 31536000
-export const dynamicParams = false
+// Allow dynamic params - pages can be generated on-demand if missing after revalidation
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { category: categorySlug } = await params
