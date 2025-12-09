@@ -1,25 +1,35 @@
 import Image from 'next/image'
 
-export default function Header() {
-  // Static header image from public directory
-  const headerImageUrl = '/header_01.jpg'
+// Switch between 'image' and 'video' header
+const HEADER_TYPE: 'image' | 'video' = 'image'
 
+export default function Header() {
   return (
-    <header className="relative w-full h-64 overflow-hidden">
-      {/* Blurred background image */}
+    <header className="relative w-full h-96 overflow-hidden">
       <div className="absolute inset-0">
-        <Image
-          src={headerImageUrl}
-          alt="Kitchen"
-          fill
-          className="object-cover"
-          priority
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-black/20 " />
+        {HEADER_TYPE === 'video' ? (
+          // Looping video background
+          <video
+            src="/header_01.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          // Static image background
+          <Image
+            src="/header_02.jpg"
+            alt="Header"
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+        )}
+        <div className="absolute inset-0 bg-black/20" />
       </div>
-      
-    
     </header>
   )
 }
