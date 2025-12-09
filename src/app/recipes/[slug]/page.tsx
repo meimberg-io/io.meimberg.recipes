@@ -178,12 +178,17 @@ export default async function RecipePage({ params }: RecipePageProps) {
           <p className="text-lg text-gray-300 italic mb-6">{recipe.description}</p>
         )}
 
-        {/* Tags (merged with vegetarian) */}
-        {((recipe.tags && recipe.tags.length > 0) || recipe.vegetarian) && (
+        {/* Tags (merged with vegetarian and status) */}
+        {((recipe.tags && recipe.tags.length > 0) || recipe.vegetarian || recipe.status) && (
           <div className="flex flex-wrap gap-2 mb-4">
             {recipe.vegetarian && (
               <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
                 {recipe.vegetarian}
+              </span>
+            )}
+            {recipe.status && (
+              <span className="px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full text-sm">
+                {recipe.status}
               </span>
             )}
             {recipe.tags?.map((tag) => (

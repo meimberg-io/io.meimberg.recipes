@@ -175,6 +175,7 @@ export async function getRecipes(): Promise<Recipe[]> {
         const notionCategory = getSelectValue(props['Kategorie']) || ''
         const { category, subCategory } = getFrontendCategory(notionCategory)
         const vegetarian = getSelectValue(props['Vegetarisch'])
+        const status = getSelectValue(props['Status'])
         const url = getUrl(props['URL'])
         const tags = getMultiSelect(props['Tags'])
         const speisekarte = getCheckbox(props['Speisekarte'])
@@ -195,6 +196,7 @@ export async function getRecipes(): Promise<Recipe[]> {
           subCategory,
           notionCategory, // Store original Notion category
           vegetarian,
+          status,
           coverImage,
           coverImageFocalPoint,
           pageIcon,
@@ -230,6 +232,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
     const notionCategory = getSelectValue(props['Kategorie']) || ''
     const { category, subCategory } = getFrontendCategory(notionCategory)
     const vegetarian = getSelectValue(props['Vegetarisch'])
+    const status = getSelectValue(props['Status'])
     const url = getUrl(props['URL'])
     const tags = getMultiSelect(props['Tags'])
     const speisekarte = getCheckbox(props['Speisekarte'])
@@ -271,6 +274,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
       subCategory: subCategory as 'Hauptgerichte' | 'Pasta' | 'Special' | undefined,
       notionCategory,
       vegetarian,
+      status,
       coverImage,
       coverImageFocalPoint,
       url,
