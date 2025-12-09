@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { error: 'Error revalidating' },
-      { status: 500 }
+      { status: 500 } 
     )
   }
 }
