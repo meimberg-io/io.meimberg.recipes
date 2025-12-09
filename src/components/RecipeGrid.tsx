@@ -50,7 +50,7 @@ export default function RecipeGrid({ recipes, category, showSubCategories = fals
 
                 {groupKey}
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {grouped[groupKey].map((recipe) => (
                   <RecipeCard 
                     key={recipe.id} 
