@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getRecipes } from '@/lib/notion-recipe'
 
-export const revalidate = 3600
+export const revalidate = 3600000
 
 export async function GET() {
   try {
