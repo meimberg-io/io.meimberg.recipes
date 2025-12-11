@@ -12,6 +12,7 @@ Initial configuration required for automatic deployment.
 | `SERVER_HOST` | `hc-02.meimberg.io` | Server hostname |
 | `SERVER_USER` | `deploy` | SSH user for deployment |
 | `NOTION_DATABASE_ID` | `<database id>` | Notion database ID |
+| `NEXT_PUBLIC_MATOMO_TRACKER` | `false` | Enable Matomo tracking (optional, set to `true` to enable) |
 
 ## GitHub Secrets
 
@@ -108,7 +109,7 @@ git push origin main
 
 Before first deployment:
 
-- [ ] GitHub Variables added: `APP_DOMAIN`, `SERVER_HOST`, `SERVER_USER`, `NOTION_DATABASE_ID`
+- [ ] GitHub Variables added: `APP_DOMAIN`, `SERVER_HOST`, `SERVER_USER`, `NOTION_DATABASE_ID`, `NEXT_PUBLIC_MATOMO_TRACKER` (optional)
 - [ ] GitHub Secrets added: `SSH_PRIVATE_KEY`, `REVALIDATE_SECRET`, `NOTION_TOKEN`
 - [ ] DNS A record configured
 - [ ] Server infrastructure deployed via Ansible
