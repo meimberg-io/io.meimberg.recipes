@@ -87,7 +87,7 @@ curl -I https://recipes.meimberg.io/
 **Environment Variables (GitHub Variables):**
 - `SERVER_HOST` - Server hostname (hc-02.meimberg.io)
 - `SERVER_USER` - SSH user (deploy)
-- `APP_DOMAIN` - Application domain (recipes.meimberg.io)
+- `APP_DOMAIN` - Application domain (recipes.meimberg.io) 
 - `NEXT_PUBLIC_APP_URL` - Frontend base URL (https://recipes.meimberg.io)
 
 **Runtime Environment Variables (set in `.env` on server):**
