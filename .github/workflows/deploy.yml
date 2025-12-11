@@ -47,6 +47,7 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           NEXT_PUBLIC_APP_URL=https://${{ vars.APP_DOMAIN }}
+          NEXT_PUBLIC_MATOMO_TRACKER=${{ vars.NEXT_PUBLIC_MATOMO_TRACKER }}
           NOTION_TOKEN=${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID=${{ vars.NOTION_DATABASE_ID }}
 
@@ -59,6 +60,7 @@ jobs:
       APP_DOMAIN: ${{ vars.APP_DOMAIN }}
       DOCKER_IMAGE: ghcr.io/${{ github.repository }}:latest
       NEXT_PUBLIC_APP_URL: https://${{ vars.APP_DOMAIN }}
+      NEXT_PUBLIC_MATOMO_TRACKER: ${{ vars.NEXT_PUBLIC_MATOMO_TRACKER }}
       NOTION_DATABASE_ID: ${{ vars.NOTION_DATABASE_ID }}
       
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -96,7 +98,7 @@ jobs:
         host: ${{ vars.SERVER_HOST }}
         username: ${{ vars.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        envs: PROJECT_NAME,GITHUB_TOKEN,DOCKER_IMAGE,APP_DOMAIN,NEXT_PUBLIC_APP_URL,NOTION_TOKEN,NOTION_DATABASE_ID,REVALIDATE_SECRET
+        envs: PROJECT_NAME,GITHUB_TOKEN,DOCKER_IMAGE,APP_DOMAIN,NEXT_PUBLIC_APP_URL,NEXT_PUBLIC_MATOMO_TRACKER,NOTION_TOKEN,NOTION_DATABASE_ID,REVALIDATE_SECRET
         script: |
           set -e
           
@@ -113,6 +115,7 @@ jobs:
           PORT=5680
           HOSTNAME=0.0.0.0
           NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+          NEXT_PUBLIC_MATOMO_TRACKER=$NEXT_PUBLIC_MATOMO_TRACKER
           NOTION_TOKEN=$NOTION_TOKEN
           NOTION_DATABASE_ID=$NOTION_DATABASE_ID
           REVALIDATE_SECRET=$REVALIDATE_SECRET
