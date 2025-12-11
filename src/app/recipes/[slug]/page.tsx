@@ -42,6 +42,7 @@ export const revalidate = 31536000
 export async function generateMetadata({ params }: RecipePageProps): Promise<Metadata> {
   const { slug } = await params
   const recipe = await getRecipeBySlug(slug)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
   
   if (!recipe) {
     return {
@@ -49,12 +50,37 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
     }
   }
 
+  const description = recipe.description || `Rezept: ${recipe.title}`
+  const keywords = recipe.tags ? [...recipe.tags] : []
+  if (recipe.vegetarian) keywords.push(recipe.vegetarian)
+  if (recipe.status) keywords.push(recipe.status)
+  keywords.push(recipe.category)
+
   return {
     title: `${recipe.title} - Bei Meimbergs`,
-    description: recipe.description || `Rezept: ${recipe.title}`,
+    description,
+    keywords: keywords.length > 0 ? keywords : undefined,
+    alternates: {
+      canonical: `${baseUrl}/recipes/${slug}`,
+    },
     openGraph: {
+      type: 'article',
       title: recipe.title,
-      description: recipe.description || `Rezept: ${recipe.title}`,
+      description,
+      url: `${baseUrl}/recipes/${slug}`,
+      siteName: 'Bei Meimbergs',
+      locale: 'de_DE',
+      images: recipe.coverImage ? [
+        {
+          url: recipe.coverImage,
+          alt: recipe.title,
+        }
+      ] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: recipe.title,
+      description,
       images: recipe.coverImage ? [recipe.coverImage] : [],
     },
   }
@@ -77,10 +103,71 @@ export default async function RecipePage({ params }: RecipePageProps) {
 
   // Get the category slug for the back link
   const categorySlug = getSlugFromCategory(recipe.category)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
+
+  // Generate structured data
+  const recipeSchema: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': 'Recipe',
+    name: recipe.title,
+    description: recipe.description || recipe.title,
+    recipeCategory: recipe.category,
+  }
+
+  if (recipe.coverImage) {
+    recipeSchema.image = recipe.coverImage
+  }
+
+  if (recipe.tags && recipe.tags.length > 0) {
+    recipeSchema.keywords = recipe.tags.join(', ')
+  }
+
+  // Add recipeCuisine if tags suggest a cuisine
+  const cuisineTags = recipe.tags?.filter(tag => 
+    ['Deutsch', 'Italienisch', 'Französisch', 'Asiatisch', 'Mexikanisch', 'Indisch', 'Griechisch', 'Spanisch', 'Thailändisch'].includes(tag)
+  )
+  if (cuisineTags && cuisineTags.length > 0) {
+    recipeSchema.recipeCuisine = cuisineTags[0]
+  }
+
+  // Breadcrumb schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: baseUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: recipe.category,
+        item: categorySlug ? `${baseUrl}/${categorySlug}` : baseUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: recipe.title,
+        item: `${baseUrl}/recipes/${slug}`,
+      },
+    ],
+  }
 
   return (
-    <main className="min-h-screen bg-gray-900 text-white">
-      <Header />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <main className="min-h-screen bg-gray-900 text-white">
+        <Header />
       <CategoryTabsClient
         categories={categories}
         activeCategory={recipe.category}
@@ -213,5 +300,6 @@ export default async function RecipePage({ params }: RecipePageProps) {
         )}
       </div>
     </main>
+    </>
   )
 }

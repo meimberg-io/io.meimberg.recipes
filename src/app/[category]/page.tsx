@@ -27,10 +27,41 @@ export const revalidate = 31536000
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { category: categorySlug } = await params
   const category: Category | null = getCategoryFromSlug(categorySlug) ?? null
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
   
+  if (!category) {
+    return {
+      title: 'Bei Meimbergs - Rezepte',
+      description: 'Unsere Rezeptsammlung',
+    }
+  }
+
+  // Get recipe count for better description
+  const allRecipes = await getRecipes()
+  const recipeCount = allRecipes.filter((r: Recipe) => r.category === category).length
+  const description = recipeCount > 0 
+    ? `Entdecke ${recipeCount} ${recipeCount === 1 ? 'Rezept' : 'Rezepte'} in der Kategorie ${category}`
+    : `Unsere ${category} Rezepte`
+
   return {
-    title: category ? `${category} - Bei Meimbergs` : 'Bei Meimbergs - Rezepte',
-    description: category ? `Unsere ${category} Rezepte` : 'Unsere Rezeptsammlung',
+    title: `${category} - Bei Meimbergs`,
+    description,
+    alternates: {
+      canonical: `${baseUrl}/${categorySlug}`,
+    },
+    openGraph: {
+      type: 'website',
+      title: `${category} - Bei Meimbergs`,
+      description,
+      url: `${baseUrl}/${categorySlug}`,
+      siteName: 'Bei Meimbergs',
+      locale: 'de_DE',
+    },
+    twitter: {
+      card: 'summary',
+      title: `${category} - Bei Meimbergs`,
+      description,
+    },
   }
 }
 
@@ -58,9 +89,36 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const needsSubCategories = hasSubCategories(category) && 
     allRecipes.some((r: Recipe) => r.category === category && r.subCategory)
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
+
+  // Breadcrumb schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: baseUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: category,
+        item: `${baseUrl}/${categorySlug}`,
+      },
+    ],
+  }
+
   return (
-    <main className="min-h-screen bg-gray-900 text-white">
-      <Header />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <main className="min-h-screen bg-gray-900 text-white">
+        <Header />
       <CategoryTabsClient
         categories={categories}
         activeCategory={category}
@@ -71,5 +129,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         showSubCategories={needsSubCategories}
       />
     </main>
+    </>
   )
 }
