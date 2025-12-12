@@ -188,6 +188,10 @@ export async function getRecipes(): Promise<Recipe[]> {
         const slug = getSlug(title, page.id)
         const categoryColor = getSelectColor(props['Kategorie'])
 
+        // Use proxy URL for cover images to handle expired S3 pre-signed URLs
+        // The proxy will fetch fresh URLs from Notion on-demand
+        const coverImageUrl = coverImage ? `/api/image-proxy?slug=${encodeURIComponent(slug)}` : undefined
+
         recipes.push({
           id: page.id,
           title,
@@ -197,7 +201,7 @@ export async function getRecipes(): Promise<Recipe[]> {
           notionCategory, // Store original Notion category
           vegetarian,
           status,
-          coverImage,
+          coverImage: coverImageUrl,
           coverImageFocalPoint,
           pageIcon,
           categoryColor,
@@ -246,6 +250,9 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
     const slug = getSlug(title, page.id)
     const categoryColor = getSelectColor(props['Kategorie'])
 
+    // Use proxy URL for cover images to handle expired S3 pre-signed URLs
+    const coverImageUrl = coverImage ? `/api/image-proxy?slug=${encodeURIComponent(slug)}` : undefined
+
     // Fetch all blocks and preserve richtext structure
     let allBlocks: any[] = []
     let cursor: string | undefined = undefined
@@ -275,7 +282,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
       notionCategory,
       vegetarian,
       status,
-      coverImage,
+      coverImage: coverImageUrl,
       coverImageFocalPoint,
       url,
       tags,
