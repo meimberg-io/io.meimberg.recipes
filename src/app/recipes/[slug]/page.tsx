@@ -56,6 +56,13 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
   if (recipe.status) keywords.push(recipe.status)
   keywords.push(recipe.category)
 
+  // Use absolute URL for cover image (proxy URL)
+  const coverImageUrl = recipe.coverImage 
+    ? recipe.coverImage.startsWith('http') 
+      ? recipe.coverImage 
+      : `${baseUrl}${recipe.coverImage}`
+    : undefined
+
   return {
     title: `${recipe.title} - Bei Meimbergs`,
     description,
@@ -70,9 +77,9 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
       url: `${baseUrl}/recipes/${slug}`,
       siteName: 'Bei Meimbergs',
       locale: 'de_DE',
-      images: recipe.coverImage ? [
+      images: coverImageUrl ? [
         {
-          url: recipe.coverImage,
+          url: coverImageUrl,
           alt: recipe.title,
         }
       ] : [],
@@ -81,7 +88,7 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
       card: 'summary_large_image',
       title: recipe.title,
       description,
-      images: recipe.coverImage ? [recipe.coverImage] : [],
+      images: coverImageUrl ? [coverImageUrl] : [],
     },
   }
 }
@@ -105,6 +112,8 @@ export default async function RecipePage({ params }: RecipePageProps) {
   const categorySlug = getSlugFromCategory(recipe.category)
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
 
+  // No need to pre-fetch - images now go through proxy API which fetches fresh URLs on-demand
+
   // Generate structured data
   const recipeSchema: Record<string, any> = {
     '@context': 'https://schema.org',
@@ -115,7 +124,11 @@ export default async function RecipePage({ params }: RecipePageProps) {
   }
 
   if (recipe.coverImage) {
-    recipeSchema.image = recipe.coverImage
+    // Use absolute URL for structured data
+    const imageUrl = recipe.coverImage.startsWith('http')
+      ? recipe.coverImage
+      : `${baseUrl}${recipe.coverImage}`
+    recipeSchema.image = imageUrl
   }
 
   if (recipe.tags && recipe.tags.length > 0) {
