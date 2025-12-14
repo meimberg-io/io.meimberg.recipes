@@ -27,6 +27,7 @@ export interface Recipe {
   url?: string
   tags?: string[]
   status?: string // Dynamic value from Notion
+  statusColor?: string // Color from Notion status select
   content?: any[] // All richtext blocks from Notion page (preserves formatting)
   slug: string
 }

@@ -278,27 +278,89 @@ export default async function RecipePage({ params }: RecipePageProps) {
           <p className="text-lg text-gray-300 italic mb-6">{recipe.description}</p>
         )}
 
-        {/* Tags (merged with vegetarian and status) */}
+        {/* Tags and Status */}
         {((recipe.tags && recipe.tags.length > 0) || recipe.vegetarian || recipe.status) && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {recipe.vegetarian && (
-              <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
-                {recipe.vegetarian}
-              </span>
-            )}
-            {recipe.status && (
-              <span className="px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full text-sm">
-                {recipe.status}
-              </span>
-            )}
-            {recipe.tags?.map((tag) => (
-              <span
-                key={tag}
-                className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm"
-              >
-                {tag}
-              </span>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            {/* Left side: Tags and Vegetarian */}
+            <div className="flex flex-wrap gap-2">
+              {recipe.vegetarian && (
+                <span className="px-3 py-1 bg-green-600/20 text-green-400 rounded-full text-sm">
+                  {recipe.vegetarian}
+                </span>
+              )}
+              {recipe.tags?.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            {/* Right side: Status with icon */}
+            {recipe.status && (() => {
+              // Map Notion colors to Tailwind classes
+              const getStatusColorClasses = (color?: string) => {
+                const colorMap: Record<string, { bg: string; text: string }> = {
+                  'default': { bg: 'bg-gray-600/20', text: 'text-gray-400' },
+                  'gray': { bg: 'bg-gray-600/20', text: 'text-gray-400' },
+                  'brown': { bg: 'bg-amber-900/20', text: 'text-amber-400' },
+                  'orange': { bg: 'bg-orange-600/20', text: 'text-orange-400' },
+                  'yellow': { bg: 'bg-yellow-600/20', text: 'text-yellow-400' },
+                  'green': { bg: 'bg-green-600/20', text: 'text-green-400' },
+                  'blue': { bg: 'bg-blue-600/20', text: 'text-blue-400' },
+                  'purple': { bg: 'bg-purple-600/20', text: 'text-purple-400' },
+                  'pink': { bg: 'bg-pink-600/20', text: 'text-pink-400' },
+                  'red': { bg: 'bg-red-600/20', text: 'text-red-400' },
+                }
+                return colorMap[color || 'default'] || colorMap['default']
+              }
+
+              const statusIcons: Record<string, JSX.Element> = {
+                'Idea': (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 5" className="w-4 h-4">
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
+                ),
+                'Initial': (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 5" className="w-4 h-4">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                  </svg>
+                ),
+                'Draft': (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 10h8" />
+                    <path d="M8 14h8" />
+                  </svg>
+                ),
+                'Beta': (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4" />
+                    <path d="M12 8h.01" />
+                  </svg>
+                ),
+                'Final': (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                ),
+              }
+
+              const icon = statusIcons[recipe.status] || null
+              const colors = getStatusColorClasses(recipe.statusColor)
+
+              return (
+                <span className={`px-3 py-1 ${colors.bg} ${colors.text} rounded-full text-sm flex items-center gap-2 ml-auto`}>
+                  {icon}
+                  {recipe.status}
+                </span>
+              )
+            })()}
           </div>
         )}
 
