@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Footer from '@/components/Footer'
 import { MatomoTracker } from '@/components/util/MatomoTracker'
+import SnowfallClient from '@/components/SnowfallClient'
 import './globals.css'
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
@@ -64,6 +65,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <Footer />
         <MatomoTracker />
+        <SnowfallClient />
       </body>
     </html>
   )
