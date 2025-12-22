@@ -41,7 +41,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
       if (currentList) {
         const ListTag = currentList.type === 'bulleted' ? 'ul' : 'ol'
         const listClass = currentList.type === 'bulleted'
-          ? 'list-disc list-inside ml-4 space-y-1 text-gray-300'
+          ? 'list-disc list-outside ml-4 space-y-1 text-gray-300'
           : 'list-decimal list-outside ml-4 space-y-1 text-gray-300'
         elements.push(
           <ListTag key={currentList.listId} className={listClass}>
@@ -103,7 +103,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
       if (currentList && currentList.type !== 'bulleted') {
         const ListTag = currentList.type === 'numbered' ? 'ol' : 'ul'
         const listClass = currentList.type === 'numbered'
-          ? 'list-decimal list-inside ml-4 space-y-1 text-gray-300'
+          ? 'list-decimal list-outside ml-4 space-y-1 text-gray-300'
           : 'list-disc list-outside ml-4 space-y-1 text-gray-300'
         elements.push(
           <ListTag key={currentList.listId} className={listClass}>
@@ -132,7 +132,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
       if (currentList && currentList.type !== 'numbered') {
         const ListTag = currentList.type === 'bulleted' ? 'ul' : 'ol'
         const listClass = currentList.type === 'bulleted'
-          ? 'list-disc list-inside ml-4 space-y-1 text-gray-300'
+          ? 'list-disc list-outside ml-4 space-y-1 text-gray-300'
           : 'list-decimal list-outside ml-4 space-y-1 text-gray-300'
         elements.push(
           <ListTag key={currentList.listId} className={listClass}>
@@ -183,7 +183,7 @@ export default function NotionContent({ blocks }: NotionContentProps) {
     const list: ListState = currentList
     const ListTag = list.type === 'bulleted' ? 'ul' : 'ol'
     const listClass = list.type === 'bulleted'
-      ? 'list-disc list-inside ml-4 space-y-1 text-gray-300'
+      ? 'list-disc list-outside ml-4 space-y-1 text-gray-300'
       : 'list-decimal list-outside ml-4 space-y-1 text-gray-300'
     elements.push(
       <ListTag key={list.listId} className={listClass}>
