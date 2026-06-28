@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['@notionhq/client'],
   },
   images: {
+    // Next 16 blocks local images with a query string unless allow-listed here.
+    localPatterns: [
+      // Notion cover images are proxied through this route and carry a ?slug query
+      { pathname: '/api/image-proxy' },
+      // Local static assets under /public (no query string)
+      { pathname: '/**', search: '' },
+    ],
     remotePatterns: [
       {
         protocol: 'https',
