@@ -1,3 +1,5 @@
+import type { JSX } from 'react'
+
 interface ExternalLinkIconProps {
   url: string
   className?: string
@@ -109,7 +111,7 @@ export default function ExternalLinkIcon({ url, className = '' }: ExternalLinkIc
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`flex-shrink-0 text-gray-400 transition-colors ${platform?.hoverColor || 'hover:text-blue-400'} ${className}`}
+      className={`shrink-0 text-gray-400 transition-colors ${platform?.hoverColor || 'hover:text-blue-400'} ${className}`}
       title={platform ? `Auf ${platform.name} öffnen` : 'Externe Quelle öffnen'}
     >
       {platform?.icon || defaultIcon}

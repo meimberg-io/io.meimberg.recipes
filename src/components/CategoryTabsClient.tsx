@@ -69,7 +69,7 @@ export default function CategoryTabsClient({
         {/* Current category button */}
         <button
           onClick={() => setIsMenuOpen(true)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-700 text-white flex-shrink-0"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-700 text-white shrink-0"
           aria-label="Kategorien öffnen"
         >
           <span className="text-lg">{currentTab?.icon || '☰'}</span>

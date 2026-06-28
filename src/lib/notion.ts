@@ -21,6 +21,9 @@ export const notion = {
   get databases() {
     return getNotionClient().databases
   },
+  get dataSources() {
+    return getNotionClient().dataSources
+  },
   get pages() {
     return getNotionClient().pages
   },

@@ -16,7 +16,7 @@ export default function RichText({ richText }: RichTextProps) {
         // Apply formatting in order: inner to outer
         // Code should be innermost (applied first)
         if (annotations.code) {
-          content = <code className="bg-gray-800 px-1 rounded text-sm font-mono">{content}</code>
+          content = <code className="bg-gray-800 px-1 rounded-sm text-sm font-mono">{content}</code>
         }
         // Then bold
         if (annotations.bold) {

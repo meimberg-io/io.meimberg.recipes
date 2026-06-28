@@ -86,7 +86,6 @@ export default function RecipeModal({ recipe, onClose }: RecipeModalProps) {
         })
     } else {
       document.body.style.overflow = 'unset'
-      setFullRecipe(null)
       fetchedIdRef.current = null
     }
   }, [recipe?.id]) // Only re-run when recipe ID changes
@@ -118,7 +117,10 @@ export default function RecipeModal({ recipe, onClose }: RecipeModalProps) {
 
   if (!recipe) return null
 
-  const displayRecipe = fullRecipe || recipe
+  // Prefer the fully-fetched recipe, but only when it matches the currently
+  // open one — otherwise fall back to the basic recipe so a freshly opened
+  // recipe never briefly shows the previously fetched content.
+  const displayRecipe = fullRecipe && fullRecipe.id === recipe.id ? fullRecipe : recipe
   const content = displayRecipe.content
 
   return (
@@ -259,7 +261,7 @@ export default function RecipeModal({ recipe, onClose }: RecipeModalProps) {
                           {displayRecipe.tags.map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs"
+                              className="px-2 py-1 bg-gray-700 text-gray-300 rounded-sm text-xs"
                             >
                               {tag}
                             </span>

@@ -130,7 +130,7 @@ export default function TestPage() {
                     <summary className="cursor-pointer text-sm text-gray-400 hover:text-gray-300">
                       Show details
                     </summary>
-                    <pre className="mt-2 p-3 bg-black/20 rounded text-xs overflow-auto">
+                    <pre className="mt-2 p-3 bg-black/20 rounded-sm text-xs overflow-auto">
                       {JSON.stringify(result.data, null, 2)}
                     </pre>
                   </details>
@@ -160,7 +160,7 @@ export default function TestPage() {
                 <li>Name it (e.g., &quot;Recipe Menu App&quot;)</li>
                 <li>Select &quot;Read content&quot; capability</li>
                 <li>Click &quot;Submit&quot;</li>
-                <li>Copy the token (starts with <code className="bg-gray-700 px-1 rounded">secret_</code> or <code className="bg-gray-700 px-1 rounded">ntn_</code>)</li>
+                <li>Copy the token (starts with <code className="bg-gray-700 px-1 rounded-sm">secret_</code> or <code className="bg-gray-700 px-1 rounded-sm">ntn_</code>)</li>
               </ol>
             </div>
             <div>
@@ -168,8 +168,8 @@ export default function TestPage() {
               <ol className="list-decimal list-inside space-y-1 ml-4">
                 <li>Open your Notion recipe database</li>
                 <li>Look at the URL in your browser</li>
-                <li>It looks like: <code className="bg-gray-700 px-1 rounded">https://www.notion.so/workspace/DATABASE_ID?v=...</code></li>
-                <li>The Database ID is the long string between the last <code className="bg-gray-700 px-1 rounded">/</code> and <code className="bg-gray-700 px-1 rounded">?</code></li>
+                <li>It looks like: <code className="bg-gray-700 px-1 rounded-sm">https://www.notion.so/workspace/DATABASE_ID?v=...</code></li>
+                <li>The Database ID is the long string between the last <code className="bg-gray-700 px-1 rounded-sm">/</code> and <code className="bg-gray-700 px-1 rounded-sm">?</code></li>
                 <li>Copy that ID (usually 32 characters)</li>
               </ol>
             </div>
@@ -185,9 +185,9 @@ export default function TestPage() {
             <div>
               <h3 className="font-medium text-white mb-2">4. Add to .env.local</h3>
               <p className="ml-4">
-                Create <code className="bg-gray-700 px-1 rounded">.env.local</code> in the project root:
+                Create <code className="bg-gray-700 px-1 rounded-sm">.env.local</code> in the project root:
               </p>
-              <pre className="mt-2 ml-4 p-3 bg-black/20 rounded text-xs">
+              <pre className="mt-2 ml-4 p-3 bg-black/20 rounded-sm text-xs">
 {`NOTION_TOKEN=secret_xxxxx
 NOTION_DATABASE_ID=your-database-id
 REVALIDATE_SECRET=your-random-secret

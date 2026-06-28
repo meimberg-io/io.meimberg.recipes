@@ -85,9 +85,24 @@ export async function GET() {
   }
 
   // Step 3: Test database access
+  // Notion API 2025-09-03 (SDK v5): the schema lives on the database's data
+  // source, not the database itself. Resolve the first data source once and
+  // reuse it for the query and property checks below.
+  let dataSourceId = ''
   try {
     const database = await notion.databases.retrieve({
       database_id: databaseId,
+    })
+
+    const dataSources = 'data_sources' in database ? database.data_sources : []
+    const resolvedId = dataSources[0]?.id
+    if (!resolvedId) {
+      throw new Error('No data source found for this database')
+    }
+    dataSourceId = resolvedId
+
+    const dataSource = await notion.dataSources.retrieve({
+      data_source_id: dataSourceId,
     })
 
     results.push({
@@ -95,8 +110,9 @@ export async function GET() {
       status: 'success',
       message: 'Successfully accessed the database',
       data: {
-        title: ('title' in database && database.title?.[0]?.plain_text) || 'Untitled',
-        properties: Object.keys(database.properties || {}),
+        title: ('title' in dataSource && dataSource.title?.[0]?.plain_text) || 'Untitled',
+        dataSourceId,
+        properties: 'properties' in dataSource ? Object.keys(dataSource.properties) : [],
       },
     })
   } catch (error: any) {
@@ -135,8 +151,8 @@ export async function GET() {
 
   // Step 4: Test query
   try {
-    const response = await notion.databases.query({
-      database_id: databaseId,
+    const response = await notion.dataSources.query({
+      data_source_id: dataSourceId,
       page_size: 1,
     })
 
@@ -162,11 +178,11 @@ export async function GET() {
 
   // Step 5: Check for required properties
   try {
-    const database = await notion.databases.retrieve({
-      database_id: databaseId,
+    const dataSource = await notion.dataSources.retrieve({
+      data_source_id: dataSourceId,
     })
 
-    const properties = database.properties || {}
+    const properties = 'properties' in dataSource ? dataSource.properties : {}
     const requiredProps = [
       'Name',
       'Kategorie',

@@ -1,6 +1,19 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/*
+  Tailwind v4 changed the default border/divide color from gray-200 to
+  currentColor. Preserve the v3 behavior so existing bare `border` utilities
+  keep rendering a light gray border.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
 
 :root {
   --background: #0a0a0a;
@@ -12,4 +25,3 @@ body {
   background: var(--background);
   font-family: system-ui, -apple-system, sans-serif;
 }
-

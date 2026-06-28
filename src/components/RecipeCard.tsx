@@ -129,7 +129,7 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
             // If it's a flag emoji, use the flag icon library
             if (countryCode && countryCode.length === 2) {
               return (
-                <span className="flex-shrink-0" style={{ fontSize: '1.2em', lineHeight: 1 }}>
+                <span className="shrink-0" style={{ fontSize: '1.2em', lineHeight: 1 }}>
                   <ReactCountryFlag 
                     countryCode={countryCode} 
                     svg 
@@ -140,7 +140,7 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
             }
             // Otherwise, display the emoji/icon directly (for non-flag emojis like 🥩, 🍝, etc.)
             return (
-              <span className="text-lg flex-shrink-0" role="img">
+              <span className="text-lg shrink-0" role="img">
                 {recipe.pageIcon}
               </span>
             )

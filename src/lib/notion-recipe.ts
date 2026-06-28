@@ -47,6 +47,25 @@ function getDatabaseId(): string {
   return databaseId
 }
 
+// Notion API 2025-09-03 (SDK v5) queries data sources, not databases directly.
+// Resolve the database's (first) data source id once and cache it.
+let cachedDataSourceId: string | null = null
+async function getDataSourceId(): Promise<string> {
+  if (cachedDataSourceId) {
+    return cachedDataSourceId
+  }
+  const database = await throttleApiCall(() =>
+    notion.databases.retrieve({ database_id: getDatabaseId() })
+  )
+  const dataSources = 'data_sources' in database ? database.data_sources : []
+  const dataSourceId = dataSources[0]?.id
+  if (!dataSourceId) {
+    throw new Error('No data source found for the configured Notion database')
+  }
+  cachedDataSourceId = dataSourceId
+  return dataSourceId
+}
+
 // Category mapping is now handled by getFrontendCategory from config/categories.ts
 
 
@@ -143,9 +162,10 @@ function getPageIcon(page: any): string | undefined {
 export async function getRecipes(): Promise<Recipe[]> {
   try {
     // Throttle: serialize API call to prevent rate limiting
+    const dataSourceId = await getDataSourceId()
     const response = await throttleApiCall(() =>
-      notion.databases.query({
-        database_id: getDatabaseId(),
+      notion.dataSources.query({
+        data_source_id: dataSourceId,
         filter: {
           property: 'Speisekarte',
           checkbox: {
