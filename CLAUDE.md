@@ -40,6 +40,11 @@ Rezeptideen, **Intake**.
 **Page-Icon:** Emoji setzen (`icon`-Feld). Konvention: Länderflagge nach Herkunft der
 Küche (🇮🇹 🇨🇳 …), sonst passendes Food-Emoji.
 
+**Cover-Bild:** **Immer** ein Cover setzen — und **in Notion hosten** (Typ `file`),
+nicht als externe URL (externe URLs laufen ab / werden live nachgeladen). Bild
+herunterladen und hochladen via `node .claude/skills/add-recipe/set-notion-cover.mjs`
+(siehe Skill `add-recipe`). Der image-proxy der App refresht nur Notion-gehostete URLs.
+
 ## Content-Konventionen (Notion-flavored Markdown)
 
 Vor komplexem Content **die MCP-Resource `notion://docs/enhanced-markdown-spec` lesen**
@@ -75,6 +80,10 @@ Intake = Eingangskorb für eingefangene Rezeptideen. Beim Anlegen:
 - `userDefined:URL` = Quell-Link, falls vorhanden
 - `Name`, `Kurzbeschreibung`, Icon setzen; `Tags`/`Vegetarisch` wenn bekannt
 - Content im obigen Format (mind. `# Zutaten` + `# Zubereitung`, soweit vorhanden)
+- **Cover-Bild setzen** (Notion-gehostet, s.o.) — immer
+
+> Der komplette, ausführbare Ablauf (Quelle holen → Seite anlegen → Cover) steht im
+> Skill **`add-recipe`** (`.claude/skills/add-recipe/`).
 
 > Bei Unklarheit (z.B. soll es schon sichtbar sein oder nur im Notion-Inbox liegen?)
 > kurz beim User rückfragen, bevor `Speisekarte` gesetzt wird.
