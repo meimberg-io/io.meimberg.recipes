@@ -16,8 +16,21 @@ Konventionen) steht in der Projekt-`CLAUDE.md` — bei Unklarheit dort nachschla
   Login-Wall. Den **Caption-Embed** nutzen:
   `https://www.instagram.com/p/<ID>/embed/captioned/` → mit WebFetch die **komplette
   Caption verbatim** holen (Zutaten mit Mengen + Schritte, nichts auslassen).
+- **TikTok**: `vm.tiktok.com`-Kurzlinks mit `curl -sIL` auflösen, dann Caption +
+  Autor + Thumbnail über `https://www.tiktok.com/oembed?url=<clean-url>` (Caption
+  steht im `title` — enthält oft Zutaten oder einen Blog-Link; `thumbnail_url` taugt
+  als Cover). Steckt das Rezept nur im Video → Browser nötig.
+- **YouTube**: Beschreibung ist per WebFetch meist nicht erreichbar (JS-Shell). Wenn
+  das Rezept nur im Video/der Description steckt → Browser nötig.
 - **Normale Rezept-URL**: WebFetch auf die Seite, Rezept extrahieren.
+- **Caption/Seite verweist auf einen Blog** („Rezept hier: …") → dem Link folgen,
+  dort steht meist das vollständige Rezept (das ist die beste Quelle).
 - **Vom User eingefügter Text**: direkt verwenden.
+
+Gibt eine Video-only-Quelle nichts Textbares her und ist **kein Browser verbunden**
+(`list_connected_browsers` leer) → **nicht erfinden**: den User bitten, seinen Browser
+zu verbinden oder den Rezepttext einzufügen. Fehlen nur die *Schritte* (Zutaten sind da),
+dürfen sie sinngemäß ergänzt und per Callout als ergänzt gekennzeichnet werden.
 
 **Immer ins Deutsche übertragen** (auch englische/andere Quellen) und **Mengen in
 metrische Einheiten umrechnen**: cups/oz/lb → g bzw. ml, °F → °C; `tsp` → `TL`,
