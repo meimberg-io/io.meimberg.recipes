@@ -73,6 +73,17 @@ node .claude/skills/add-recipe/set-notion-cover.mjs \
 Danach prüfen: `cover.type` muss `file` sein (nicht `external`), Host
 `prod-files-secure.s3…` (= Notion-gehostet).
 
+**Instagram-Reels** (`/reel/…` oder Video-Posts): Das `og:image` ist die Share-Karte
+**mit eingebranntem Play-Button** — als Cover unschön. Einen sauberen Frame gibt der
+Reel öffentlich nicht her. Dann: ein passendes Foto aus einer **anderen Quelle**
+(Rezept-Blog-Hero-Bild via dessen `og:image`, `--image-url`) nehmen oder den User um
+ein Bild bitten. Vorher kurz rückfragen (fremdes Foto/Urheberrecht). Normale Foto-Posts
+sind unkritisch.
+
+**Cover ERSETZEN:** next/image cached das optimierte Bild pro Proxy-URL (= Slug, 1 Jahr).
+Bei gleichem Slug zeigt die App sonst das alte Bild. Lokal: `rm -rf .next/cache/images`
+(Dev-Server zeigt dann das neue). Deployt: greift erst nach Cache-Ablauf / Neudeploy.
+
 ### 4. Sichtbarkeit / Verifikation
 
 - Lokal (Dev): `http://localhost:3000/intake` neu laden → Rezept + Cover sichtbar.
