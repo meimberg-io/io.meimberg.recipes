@@ -1,5 +1,6 @@
 # Use the official Node.js runtime as the base image
-FROM node:18-alpine AS base
+# Next.js 16 requires Node.js >=20.9.0 — use the current LTS (22).
+FROM node:22-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
