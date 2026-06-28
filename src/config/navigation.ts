@@ -54,6 +54,12 @@ export const navigationTabs: NavigationTab[] = [
     slug: 'komponenten',
     icon: '🧩',
   },
+  {
+    id: 'Intake',
+    label: 'Intake',
+    slug: 'intake',
+    icon: '🥤',
+  },
 ]
 
 /**
