@@ -47,6 +47,11 @@ herunterladen und hochladen via `node .claude/skills/add-recipe/set-notion-cover
 
 ## Content-Konventionen (Notion-flavored Markdown)
 
+**Sprache & Einheiten:** Rezepte werden **immer auf Deutsch** eingepflegt (auch wenn
+die Quelle englisch/anderssprachig ist) und **Mengen in metrische Einheiten**
+umgerechnet: cups/oz/lb → g bzw. ml, °F → °C; `tsp` → `TL`, `tbsp` → `EL`. Inhaltlich
+originalgetreu (nur übersetzen + umrechnen, nichts dazuerfinden).
+
 Vor komplexem Content **die MCP-Resource `notion://docs/enhanced-markdown-spec` lesen**
 (nicht raten). Aufbau wie bei den bestehenden Rezepten:
 

@@ -10,16 +10,19 @@ Konventionen) steht in der Projekt-`CLAUDE.md` — bei Unklarheit dort nachschla
 
 ## Ablauf
 
-### 1. Rezept-Inhalt beschaffen (verbatim, Originalsprache)
+### 1. Rezept-Inhalt beschaffen & auf Deutsch übertragen
 
 - **Instagram** (`instagram.com/p/…` oder `/reel/…`): Direktabruf scheitert an der
   Login-Wall. Den **Caption-Embed** nutzen:
   `https://www.instagram.com/p/<ID>/embed/captioned/` → mit WebFetch die **komplette
-  Caption verbatim** holen (Zutaten mit Mengen + Schritte, nicht übersetzen/kürzen).
+  Caption verbatim** holen (Zutaten mit Mengen + Schritte, nichts auslassen).
 - **Normale Rezept-URL**: WebFetch auf die Seite, Rezept extrahieren.
 - **Vom User eingefügter Text**: direkt verwenden.
 
-Inhalt **originalgetreu** übernehmen (Mengen, Reihenfolge, Sprache). Fehlen für eine
+**Immer ins Deutsche übertragen** (auch englische/andere Quellen) und **Mengen in
+metrische Einheiten umrechnen**: cups/oz/lb → g bzw. ml, °F → °C; `tsp` → `TL`,
+`tbsp` → `EL` (Standard-Entsprechung). Nur Sprache + Einheiten anpassen — inhaltlich
+nichts dazuerfinden oder weglassen, Reihenfolge/Schritte bleiben. Fehlen für eine
 Zutatengruppe Mengen (z.B. „Kräuterbutter"), trotzdem so listen wie in der Quelle.
 
 ### 2. Notion-Seite anlegen
@@ -93,7 +96,7 @@ Bei gleichem Slug zeigt die App sonst das alte Bild. Lokal: `rm -rf .next/cache/
 
 ## Wichtig
 
-- **Originalgetreu** bleiben — nichts dazuerfinden. Fehlende Mengen so lassen wie in der Quelle.
+- **Immer Deutsch**, Mengen **metrisch** (g/ml/°C; `tsp`→`TL`, `tbsp`→`EL`). Inhaltlich originalgetreu — nichts dazuerfinden, nichts weglassen.
 - Cover **immer** setzen und **immer** in Notion hosten (Schritt 3).
 - Quell-Link in `userDefined:URL` hinterlegen.
 - Bei Unklarheit (Sichtbarkeit, Kategorie) kurz beim User rückfragen.
