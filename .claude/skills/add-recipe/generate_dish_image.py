@@ -45,6 +45,9 @@ def main():
         "leichter 45-Grad-Winkel, geringe Schärfentiefe, appetitlich und realistisch. "
         "KEINE Texteinblendungen, keine Schrift, keine Hände, kein Wasserzeichen, kein Rezept, keine Collage."
     )
+    extra = arg("--extra")
+    if extra:
+        prompt += " " + extra
 
     from google import genai
     client = genai.Client(api_key=load_key())
