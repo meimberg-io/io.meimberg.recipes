@@ -30,9 +30,10 @@ def load_key():
 def main():
     args = sys.argv[1:]
     if not args:
-        sys.exit("Usage: extract_recipe_gemini.py <video-url|datei> [--keep <pfad>]")
+        sys.exit("Usage: extract_recipe_gemini.py <video-url|datei> [--keep <pfad>] [--title <name>]")
     src = args[0]
     keep = args[args.index("--keep") + 1] if "--keep" in args else None
+    title = args[args.index("--title") + 1] if "--title" in args else None
     key = load_key()
     tmp = keep or os.path.join(tempfile.mkdtemp(), "video.mp4")
 
@@ -51,23 +52,34 @@ def main():
     print(f"… Datei: {os.path.getsize(tmp)} bytes", file=sys.stderr)
 
     # 2) Gemini
+    # Mime-Typ aus den ersten Bytes bestimmen (Gemini braucht ihn).
+    head = open(tmp, "rb").read(16)
+    if head[:8] == b"\x89PNG\r\n\x1a\n": mime = "image/png"
+    elif head[:3] == b"\xff\xd8\xff": mime = "image/jpeg"
+    elif head[:4] == b"RIFF" and b"WEBP" in head: mime = "image/webp"
+    elif head[4:8] == b"ftyp": mime = "video/mp4"
+    else: mime = "video/mp4"
+
     from google import genai
     client = genai.Client(api_key=key)
-    print("… upload zu Gemini", file=sys.stderr)
-    f = client.files.upload(file=tmp)
+    print(f"… upload zu Gemini ({mime})", file=sys.stderr)
+    f = client.files.upload(file=tmp, config={"mime_type": mime})
     while f.state.name == "PROCESSING":
         time.sleep(2); f = client.files.get(name=f.name)
     if f.state.name != "ACTIVE":
         sys.exit(f"Gemini file state: {f.state.name}")
 
-    prompt = """Extrahiere das Rezept aus diesem Koch-Video (eingeblendeter Text UND gesprochener Inhalt).
+    prompt = """Extrahiere das Rezept aus diesem Koch-Video ODER Rezept-Foto (z.B. abfotografierte Kochbuchseite –
+lies den Text ab). Berücksichtige eingeblendeten/geschriebenen Text UND gesprochenen Inhalt.
 Antworte auf DEUTSCH. Mengen metrisch (g/ml, °C; tsp->TL, tbsp->EL, cups/oz/lb->g/ml).
 Nur was tatsächlich vorkommt – nichts erfinden. Schritte knapp und korrekt.
 Gib NUR JSON zurück:
 {"name": str, "kurzbeschreibung": str, "vegetarisch": "Vegetarisch"|"Teilvegetarisch"|null,
  "portionen": str|null, "zutaten": [{"gruppe": str|null, "items": [str,...]}], "zubereitung": [str,...],
  "kein_rezept": bool}
-Setze "kein_rezept": true, wenn das Video kein nachkochbares Rezept zeigt."""
+Setze "kein_rezept": true, wenn kein nachkochbares Rezept erkennbar ist."""
+    if title:
+        prompt += f"\nFalls mehrere Rezepte zu sehen sind, extrahiere NUR das mit dem Titel: „{title}“."
 
     print("… extrahiere", file=sys.stderr)
     resp = client.models.generate_content(
