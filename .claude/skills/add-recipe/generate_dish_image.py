@@ -51,8 +51,11 @@ def main():
 
     from google import genai
     client = genai.Client(api_key=load_key())
-    print(f"… generiere Bild: {title}", file=sys.stderr)
-    resp = client.models.generate_content(model="gemini-2.5-flash-image", contents=prompt)
+    # gemini-3-pro-image ("Nano Banana Pro") = bestes Foto-Realismus-Modell (wie in der Gemini-App).
+    # Fallbacks bei Nichtverfügbarkeit: gemini-3.1-flash-image, gemini-2.5-flash-image.
+    model = arg("--model", "gemini-3-pro-image")
+    print(f"… generiere Bild ({model}): {title}", file=sys.stderr)
+    resp = client.models.generate_content(model=model, contents=prompt)
     data = None
     for part in resp.candidates[0].content.parts:
         if getattr(part, "inline_data", None) and part.inline_data.data:
