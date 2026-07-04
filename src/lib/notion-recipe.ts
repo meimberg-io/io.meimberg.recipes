@@ -163,22 +163,33 @@ export async function getRecipes(): Promise<Recipe[]> {
   try {
     // Throttle: serialize API call to prevent rate limiting
     const dataSourceId = await getDataSourceId()
-    const response = await throttleApiCall(() =>
-      notion.dataSources.query({
-        data_source_id: dataSourceId,
-        filter: {
-          property: 'Speisekarte',
-          checkbox: {
-            equals: true,
+
+    // Paginate: Notion returns max 100 results per query. Loop until all pages
+    // are fetched, otherwise recipes beyond the first 100 silently disappear.
+    const results: any[] = []
+    let cursor: string | undefined = undefined
+    do {
+      const response = await throttleApiCall(() =>
+        notion.dataSources.query({
+          data_source_id: dataSourceId,
+          filter: {
+            property: 'Speisekarte',
+            checkbox: {
+              equals: true,
+            },
           },
-        },
-      })
-    )
+          start_cursor: cursor,
+          page_size: 100,
+        })
+      )
+      results.push(...response.results)
+      cursor = response.has_more ? (response.next_cursor ?? undefined) : undefined
+    } while (cursor)
 
     const recipes: Recipe[] = []
-    
+
     // Sort by Notion category first (for consistent grouping)
-    const sortedResults = [...response.results].sort((a, b) => {
+    const sortedResults = [...results].sort((a, b) => {
       if ('properties' in a && 'properties' in b) {
         const aCat = getSelectValue(a.properties['Kategorie']) || ''
         const bCat = getSelectValue(b.properties['Kategorie']) || ''
