@@ -27,20 +27,57 @@ def load_key():
         pass
     sys.exit("GEMINI_API_KEY nicht gefunden (env oder .env)")
 
+def arg(name):
+    a = sys.argv
+    return a[a.index(name) + 1] if name in a else None
+
 def main():
     args = sys.argv[1:]
     if not args:
-        sys.exit("Usage: extract_recipe_gemini.py <video-url|datei> [--keep <pfad>] [--title <name>]")
-    src = args[0]
-    keep = args[args.index("--keep") + 1] if "--keep" in args else None
-    title = args[args.index("--title") + 1] if "--title" in args else None
+        sys.exit("Usage: extract_recipe_gemini.py <video-url|datei>  |  --text <textdatei>   [--keep <pfad>] [--title <name>]")
+    keep = arg("--keep")
+    title = arg("--title")
+    text_file = arg("--text")           # verrauschte Artikel-/Clip-Texte statt Medien
+    src = args[0] if not args[0].startswith("--") else None
     key = load_key()
-    tmp = keep or os.path.join(tempfile.mkdtemp(), "video.mp4")
 
-    # 1) Beschaffen
+    prompt = """Extrahiere das EINE Hauptrezept aus dem Material (Koch-Video, Rezept-Foto/abfotografierte
+Kochbuchseite mit Text zum Ablesen, PDF, oder aus einer Webseite kopierter Text). Bei Text: Navigation,
+Kommentare, Werbung, verwandte Artikel und Newsletter ignorieren. Eingeblendeten/geschriebenen Text UND
+gesprochenen Inhalt berücksichtigen.
+Antworte auf DEUTSCH. Mengen metrisch (g/ml, °C; tsp->TL, tbsp->EL, cups/oz/lb->g/ml).
+Nur was tatsächlich vorkommt – nichts erfinden. Schritte knapp und korrekt.
+Gib NUR JSON zurück:
+{"name": str, "kurzbeschreibung": str, "vegetarisch": "Vegetarisch"|"Teilvegetarisch"|null,
+ "portionen": str|null, "zutaten": [{"gruppe": str|null, "items": [str,...]}], "zubereitung": [str,...],
+ "kein_rezept": bool}
+Setze "kein_rezept": true, wenn kein nachkochbares Rezept erkennbar ist."""
+    if title:
+        prompt += f"\nFalls mehrere Rezepte vorkommen, extrahiere NUR das mit dem Titel: „{title}“."
+
+    from google import genai
+    client = genai.Client(api_key=key)
+
+    # --- Text-Modus: kopierten Webseiten-/Clip-Text direkt an Gemini ---
+    if text_file:
+        text = pathlib.Path(text_file).read_text()
+        print("… extrahiere (Text)", file=sys.stderr)
+        resp = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt + "\n\nTEXT:\n" + text[:20000]],
+            config={"response_mime_type": "application/json"},
+        )
+        print(resp.text)
+        return
+
+    if not src:
+        sys.exit("Keine Quelle: <url|datei> oder --text <textdatei> angeben")
+
+    # --- Medien-Modus: Video/Bild/PDF beschaffen ---
+    tmp = keep or os.path.join(tempfile.mkdtemp(), "media")
     if os.path.exists(src):
         tmp = src
-    elif re.match(r'https?://[^ ]*\.(mp4|mov|webm)(\?|$)', src, re.I) or "prod-files-secure" in src:
+    elif re.match(r'https?://[^ ]*\.(mp4|mov|webm|pdf|jpg|jpeg|png|webp)(\?|$)', src, re.I) or "prod-files-secure" in src:
         print("… lade Datei direkt", file=sys.stderr)
         urllib.request.urlretrieve(src, tmp)
     else:
@@ -51,7 +88,6 @@ def main():
             sys.exit(f"Download fehlgeschlagen:\n{r.stderr[-800:]}")
     print(f"… Datei: {os.path.getsize(tmp)} bytes", file=sys.stderr)
 
-    # 2) Gemini
     # Mime-Typ aus den ersten Bytes bestimmen (Gemini braucht ihn).
     head = open(tmp, "rb").read(16)
     if head[:8] == b"\x89PNG\r\n\x1a\n": mime = "image/png"
@@ -61,26 +97,12 @@ def main():
     elif head[4:8] == b"ftyp": mime = "video/mp4"
     else: mime = "video/mp4"
 
-    from google import genai
-    client = genai.Client(api_key=key)
     print(f"… upload zu Gemini ({mime})", file=sys.stderr)
     f = client.files.upload(file=tmp, config={"mime_type": mime})
     while f.state.name == "PROCESSING":
         time.sleep(2); f = client.files.get(name=f.name)
     if f.state.name != "ACTIVE":
         sys.exit(f"Gemini file state: {f.state.name}")
-
-    prompt = """Extrahiere das Rezept aus diesem Koch-Video ODER Rezept-Foto (z.B. abfotografierte Kochbuchseite –
-lies den Text ab). Berücksichtige eingeblendeten/geschriebenen Text UND gesprochenen Inhalt.
-Antworte auf DEUTSCH. Mengen metrisch (g/ml, °C; tsp->TL, tbsp->EL, cups/oz/lb->g/ml).
-Nur was tatsächlich vorkommt – nichts erfinden. Schritte knapp und korrekt.
-Gib NUR JSON zurück:
-{"name": str, "kurzbeschreibung": str, "vegetarisch": "Vegetarisch"|"Teilvegetarisch"|null,
- "portionen": str|null, "zutaten": [{"gruppe": str|null, "items": [str,...]}], "zubereitung": [str,...],
- "kein_rezept": bool}
-Setze "kein_rezept": true, wenn kein nachkochbares Rezept erkennbar ist."""
-    if title:
-        prompt += f"\nFalls mehrere Rezepte zu sehen sind, extrahiere NUR das mit dem Titel: „{title}“."
 
     print("… extrahiere", file=sys.stderr)
     resp = client.models.generate_content(

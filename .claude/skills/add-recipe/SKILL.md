@@ -1,134 +1,172 @@
 ---
 name: add-recipe
-description: Use when adding a new recipe to the Meimberg recipe app (io.meimberg.recipes) from a source — an Instagram link, a recipe URL, or pasted text. Extracts the recipe faithfully, creates the Notion page with the right properties (Kategorie „Ideen", früher „Intake"), follows the content conventions, and ALWAYS sets a Notion-hosted cover image. Triggers on "pflege das als Rezept/Ideen/Intake ein", "füg das Rezept hinzu", "add this recipe", a pasted Instagram/recipe link with the intent to save it.
+description: Use when adding a new recipe to the Meimberg recipe app (io.meimberg.recipes) from any source — Instagram/TikTok/YouTube link, recipe URL, cookbook photo, PDF, or pasted text. Extracts the recipe faithfully (German + metric), creates the Notion page with the right properties (Kategorie „Ideen", früher „Intake"), and ALWAYS sets a Notion-hosted cover image (real photo or Gemini-generated). Triggers on "pflege das als Rezept/Ideen/Intake ein", "füg das Rezept hinzu", "add this recipe", a pasted recipe/social link with the intent to save it, or "importier die Rezeptideen".
 ---
 
 # Rezept einpflegen (Meimberg's Menu)
 
-Rezepte leben in **Notion**, die App liest nur. Hintergrund (Schema, Notion-IDs,
-Konventionen) steht in der Projekt-`CLAUDE.md` — bei Unklarheit dort nachschlagen.
+Rezepte leben in **Notion**, die App liest nur. Schema, Notion-IDs und Content-Konventionen
+stehen in der Projekt-`CLAUDE.md`. Data Source (parent zum Anlegen): `eddfc71c-2dca-4502-89bd-2685a6135fb3`.
 
-## Ablauf
+Ablauf: **Inhalt beschaffen → auf Deutsch/metrisch übertragen → Notion-Seite anlegen → Cover setzen → prüfen.**
+Beim Import aus der „Rezeptideen"-DB zusätzlich: Ideen-Seite nach Erfolg in den Papierkorb.
 
-### 1. Rezept-Inhalt beschaffen & auf Deutsch übertragen
+## Einmaliges Setup (für Gemini-gestützte Extraktion & Cover)
 
-- **Instagram** (`instagram.com/p/…` oder `/reel/…`): Direktabruf scheitert an der
-  Login-Wall. Den **Caption-Embed** nutzen:
-  `https://www.instagram.com/p/<ID>/embed/captioned/` → mit WebFetch die **komplette
-  Caption verbatim** holen (Zutaten mit Mengen + Schritte, nichts auslassen).
-- **TikTok**: `vm.tiktok.com`-Kurzlinks mit `curl -sIL` auflösen, dann Caption +
-  Autor + Thumbnail über `https://www.tiktok.com/oembed?url=<clean-url>` (Caption
-  steht im `title` — enthält oft Zutaten oder einen Blog-Link; `thumbnail_url` taugt
-  als Cover). Steckt das Rezept nur im Video → Browser nötig.
-- **YouTube**: Beschreibung ist per WebFetch meist nicht erreichbar (JS-Shell). Wenn
-  das Rezept nur im Video/der Description steckt → Browser nötig.
-- **Normale Rezept-URL**: WebFetch auf die Seite, Rezept extrahieren.
-- **Caption/Seite verweist auf einen Blog** („Rezept hier: …") → dem Link folgen,
-  dort steht meist das vollständige Rezept (das ist die beste Quelle).
-- **Vom User eingefügter Text**: direkt verwenden.
+- **`GEMINI_API_KEY`** in die `.env` legen. Key kommt aus **Google AI Studio**
+  (`https://aistudio.google.com/apikey`), NICHT aus der Cloud Console. Free-Tier reicht;
+  Imagen/Video/Bild laufen über denselben Key.
+- **venv** mit den nötigen Paketen:
+  ```bash
+  python3 -m venv .venv && .venv/bin/pip install yt-dlp google-genai
+  ```
+- Verwendete Modelle (zentral in den Skripten, leicht änderbar):
+  - Extraktion (Video/Foto/PDF/Text → Rezept): **`gemini-2.5-flash`**
+  - Cover-Generierung: **`gemini-3-pro-image`** („Nano Banana Pro", bestes Foto-Realismus-Modell,
+    wie in der Gemini-App). Fallback `gemini-2.5-flash-image`.
+- `ffmpeg` (für Video-Standbild-Cover) muss im PATH sein.
 
-**Video-only (TikTok/Reel/YouTube ohne Text, auch Notion-gehostete .mp4):** per
-**Gemini** extrahieren — `extract_recipe_gemini.py` lädt das Video (yt-dlp bzw. direkt
-bei .mp4-URLs) und lässt Gemini das Rezept als JSON ziehen (Deutsch, metrisch). Braucht
-`GEMINI_API_KEY` in der `.env` und einen Python mit `yt-dlp` + `google-genai`:
+## 1. Rezept-Inhalt beschaffen
+
+**Zuerst den Seiten-Inhalt prüfen, nicht nur die URL.** Viele „Rezeptideen"-Seiten sind
+Notion-Webclipper-Speicherungen: das **volle Rezept steht im Seiten-Text**, auch wenn die
+Quell-URL längst tot ist. Also immer die Notion-Blöcke (Text + angehängte Bilder/Videos/PDFs)
+ansehen, bevor man die (evtl. tote) URL abruft.
+
+Quelle → Methode:
+
+| Quelle | Vorgehen |
+|---|---|
+| **Text schon auf der Seite** (Webclipper) / vom User eingefügt | direkt verwenden |
+| **Normale Rezept-URL** | `WebFetch`. Bei 403/leer/JS-Shell → **Browser** (s.u.) |
+| **Blockierte DE-Domains** (chefkoch, focus, wikihow, lecker, essen-und-trinken teils …) | WebFetch schlägt fehl → **verbundener Browser**: `navigate` + `get_page_text` (Desktop-URL statt `mobile.`/`m.`) |
+| **Instagram** (`/p/…`, `/reel/…`) | Caption-Embed `https://www.instagram.com/p/<ID>/embed/captioned/` mit WebFetch (komplette Caption verbatim). Steckt das Rezept nur im Video → Gemini |
+| **TikTok** | `vm.tiktok.com`-Kurzlink mit `curl -sIL` auflösen; Caption+Autor+Thumbnail via `https://www.tiktok.com/oembed?url=<clean-url>` (Rezept oft im `title`, manchmal nur ein Blog-Link). Sonst Video → Gemini |
+| **YouTube** | Beschreibung enthält oft das Rezept: rohes HTML per `curl` holen, `"shortDescription":"…"` extrahieren. Sonst Video → Gemini |
+| **Video-only** (TikTok/Reel/YouTube/fb.watch/**Notion-mp4-Anhang**) | **Gemini** (s. `extract_recipe_gemini.py`) |
+| **Kochbuch-Foto / Rezept-Bild** | **Gemini-Bild-OCR** (`extract_recipe_gemini.py` mit `--title`, falls zwei Rezepte auf einem Foto) |
+| **PDF-Anhang** | **Gemini** (`extract_recipe_gemini.py` mit der PDF-URL) |
+| **Verrauschter Artikel-Clip** (viel Navigation/Kommentare) | Seitentext dumpen und `extract_recipe_gemini.py --text <datei>` (filtert Nav/Werbung/Kommentare) |
+
+### Gemini-Extraktion (`extract_recipe_gemini.py`)
+
+Aus dem Repo-Root ausführen (findet `.env`). Gibt Rezept-JSON auf stdout aus
+(`{name, kurzbeschreibung, vegetarisch, portionen, zutaten:[{gruppe,items}], zubereitung:[…], kein_rezept}`):
 ```bash
-python3 -m venv .venv && .venv/bin/pip install yt-dlp google-genai   # einmalig
-.venv/bin/python .claude/skills/add-recipe/extract_recipe_gemini.py <url|mp4-url> --keep /tmp/v.mp4
+.venv/bin/python .claude/skills/add-recipe/extract_recipe_gemini.py <url|datei> --keep /tmp/v.mp4   # Video (yt-dlp) / .mp4-/PDF-/Bild-URL
+.venv/bin/python .claude/skills/add-recipe/extract_recipe_gemini.py <bild-url> --title "<Rezeptname>" # Kochbuchseite (OCR)
+.venv/bin/python .claude/skills/add-recipe/extract_recipe_gemini.py --text /tmp/page.txt             # verrauschter Text
 ```
-Das JSON ins Content-Format übertragen. Cover: **Standbild aus dem Video** ziehen und
-per `--file` hosten (kein Play-Button): `ffmpeg -ss <~85% Laufzeit> -i v.mp4 -frames:v 1 frame.jpg`.
-Wenn Gemini `"kein_rezept": true` liefert → überspringen.
+- Notion-gehostete Medien (`prod-files-secure…`): erst die **frische signierte URL** aus dem
+  Block holen (läuft nach Minuten ab), dann direkt übergeben.
+- `"kein_rezept": true` → überspringen (kein nachkochbares Rezept, z.B. reines Dish-Foto).
 
-Steht keine dieser Optionen zur Verfügung → **nicht erfinden**: den User um Browser-Verbindung
-oder den Rezepttext bitten. Fehlen nur die *Schritte* (Zutaten sind da), dürfen sie sinngemäß
-ergänzt und per Callout gekennzeichnet werden.
+### Browser (Claude in Chrome)
 
-**Immer ins Deutsche übertragen** (auch englische/andere Quellen) und **Mengen in
-metrische Einheiten umrechnen**: cups/oz/lb → g bzw. ml, °F → °C; `tsp` → `TL`,
-`tbsp` → `EL` (Standard-Entsprechung). Nur Sprache + Einheiten anpassen — inhaltlich
-nichts dazuerfinden oder weglassen, Reihenfolge/Schritte bleiben. Fehlen für eine
-Zutatengruppe Mengen (z.B. „Kräuterbutter"), trotzdem so listen wie in der Quelle.
+Für WebFetch-blockierte/JS-Seiten: `list_connected_browsers` prüfen; `navigate` zur URL,
+dann `get_page_text`. Cookie-Banner ggf. wegklicken. Bei `mobile.`/`m.`-Domains die
+Desktop-Variante probieren (z.B. `mobile.chefkoch.de/rezepte/mID/…` → `www.chefkoch.de/rezepte/ID/…`).
+Reines **gesprochenes** Video-Rezept ohne Text bekommt der Browser nicht — dafür Gemini.
 
-### 2. Notion-Seite anlegen
+### Sprache & Einheiten (immer)
 
-Mit `notion-create-pages`, **parent = data_source_id** der Rezepte-Collection
-(`eddfc71c-2dca-4502-89bd-2685a6135fb3`).
+**Immer ins Deutsche übertragen** (auch englische/andere Quellen) und **Mengen metrisch**:
+cups/oz/lb → g bzw. ml, °F → °C; `tsp` → `TL`, `tbsp` → `EL`. Nur Sprache + Einheiten anpassen —
+inhaltlich nichts dazuerfinden/weglassen, Reihenfolge/Schritte bleiben. Fehlen für eine
+Zutatengruppe Mengen, trotzdem so listen wie in der Quelle (per Callout „Mengen im Original
+nicht angegeben" kennzeichnen). Fehlen nur die *Schritte* (Zutaten sind da), dürfen sie
+sinngemäß ergänzt und per Callout gekennzeichnet werden — sonst **nicht erfinden**.
 
-Properties (Ideen-Standard, sofort sichtbar):
-- `Name` = Rezeptname
-- `Kategorie` = `"Ideen"`  (früher „Intake"; steuert den „Ideen"-Tab der App)
+## 2. Notion-Seite anlegen
+
+Mit `notion-create-pages`, **parent = data_source_id** `eddfc71c-2dca-4502-89bd-2685a6135fb3`.
+(Bei vielen auf einmal effizienter direkt über das SDK: `pages.create` mit `heading_1`/`heading_3`/
+`bulleted_list_item`/`numbered_list_item`-Blöcken aus dem Rezept-JSON.)
+
+Properties (Standard „Ideen"-Eingangskorb, sofort sichtbar):
+- `Name` = Rezeptname (Titel NICHT in den Content)
+- `Kategorie` = `"Ideen"` (früher „Intake"; steuert den „Ideen"-Tab)
 - `Status` = `"Idea"`
-- `Speisekarte` = `"__YES__"`  (sonst kein App-Tab)
+- `Speisekarte` = `"__YES__"` (sonst erscheint es in KEINEM App-Tab)
 - `Kurzbeschreibung` = Ein-Satz-Teaser
-- `Vegetarisch` = wenn zutreffend (`"Vegetarisch"` / `"Teilvegetarisch"` / `"Vegatarische Variante"` — Tippfehler beibehalten)
+- `Vegetarisch` = wenn zutreffend (`"Vegetarisch"` / `"Teilvegetarisch"` / `"Vegatarische Variante"` — Notion-Tippfehler beibehalten)
 - `userDefined:URL` = Quell-Link (Property MUSS so heißen)
-- `Tags` = nur wenn klar passend
+- `Tags` = nur wenn klar passend (z.B. `China` für chinesische Gerichte, `Thermomix` bei Mixtopf-Rezepten). Bestehende Tags beim Update **mergen**, nicht überschreiben.
 
-`icon` = passendes Emoji (Länderflagge nach Küche, sonst Food-Emoji).
+`icon` = passendes Emoji (Länderflagge nach Küche, sonst Food-Emoji). **Nur breit unterstützte
+Emojis** — Notion lehnt sehr neue (z.B. 🫛) als Icon mit Validierungsfehler ab; im Zweifel ein
+etabliertes nehmen (🍜 🥟 🥩 🍗 🍰 …).
 
-**Content** (Notion-flavored Markdown, Titel NICHT in den Content):
+**Content** (Notion-flavored Markdown):
 ```
 # Zutaten
 - <Menge> <Zutat>
-### <Untergruppe>   ← optional, für Sub-Zutaten/-Schritte (H3)
+### <Untergruppe>   ← optional (H3), z.B. „Sauce" / „Teig"
 - ...
 
 # Zubereitung
 1. **<Schritt-Lead>:** <Beschreibung>
 ```
 Erlaubt: verschachtelte Bullets (Tab), `---`, `**fett**`,
-`<callout icon="💡" color="gray_bg">…</callout>` für Hintergrund/Tipps,
+`<callout icon="💡" color="gray_bg">…</callout>` für Hintergrund/Hinweise,
 Links auf andere Rezepte (`https://recipes.meimberg.io/recipes/<slug>`).
 Bei komplexem Content vorher die MCP-Resource `notion://docs/enhanced-markdown-spec` lesen.
 
-### 3. Cover-Bild setzen — IMMER, und in Notion gehostet
+## 3. Cover-Bild setzen — IMMER, und in Notion gehostet
 
-**Kein** externes Cover (läuft ab / wird live nachgeladen). Stattdessen das Bild
-**herunterladen und in Notion hochladen** — dann hostet Notion es dauerhaft (wie bei
-den bestehenden Rezepten; der image-proxy der App refresht die S3-URL).
+**Nie ein externes Cover** (läuft ab / wird live nachgeladen). Bild besorgen → per
+`set-notion-cover.mjs` in Notion hochladen (der image-proxy der App refresht nur Notion-gehostete URLs).
+Cover-Quelle in dieser Priorität:
 
-Helfer-Skript (aus dem Repo-Root, findet `node_modules` + `.env`):
+1. **Echtes Dish-Foto auf der Ideen-Seite** (Blog-/Social-Bild) → dessen frische Notion-S3-URL
+   herunterladen und per `--file` re-hosten.
+2. **Blog-Hero-Foto** (`og:image`) — auch von WebFetch-blockierten Seiten holbar per
+   `curl -A "facebookexternalhit/1.1" <url> | grep og:image`; dann `--image-url`.
+3. **Video-Standbild** (kein Play-Button): `ffmpeg -ss <~85% Laufzeit> -i v.mp4 -frames:v 1 f.jpg`, dann `--file`.
+4. **Gemini-generiert**, wenn kein gutes Foto da ist (Kochbuchseite, Play-Button-Thumbnail, gar kein Bild):
+   ```bash
+   .venv/bin/python .claude/skills/add-recipe/generate_dish_image.py --json <recipe.json> --out /tmp/dish.png
+   # oder: --title "<Name>" --hint "<kurze Beschreibung>"   ·   --extra "…" für mehr Realismus
+   node .claude/skills/add-recipe/set-notion-cover.mjs --page <id> --file /tmp/dish.png
+   ```
+
+`set-notion-cover.mjs` (aus Repo-Root; lädt herunter → Notion-File-Upload → setzt Cover):
 ```bash
-# aus einem Instagram-Post (zieht og:image automatisch):
-node .claude/skills/add-recipe/set-notion-cover.mjs \
-  --page <pageId> --instagram <postUrl> --filename <slug>.jpg
-
-# aus einer direkten Bild-URL:
-node .claude/skills/add-recipe/set-notion-cover.mjs \
-  --page <pageId> --image-url <url> --filename <slug>.jpg
+node .claude/skills/add-recipe/set-notion-cover.mjs --page <id> --instagram <postUrl>   # zieht og:image
+node .claude/skills/add-recipe/set-notion-cover.mjs --page <id> --image-url <url>
+node .claude/skills/add-recipe/set-notion-cover.mjs --page <id> --file <lokale-datei>
 ```
-Danach prüfen: `cover.type` muss `file` sein (nicht `external`), Host
-`prod-files-secure.s3…` (= Notion-gehostet).
+Danach prüfen: `cover.type` = `file` (nicht `external`), Host `prod-files-secure.s3…`.
 
-**Kein passendes Foto verfügbar** (nur Kochbuchseite, Play-Button-Thumbnail, gar kein Bild)?
-→ Cover mit **Gemini generieren** aus Titel + Rezept:
-```bash
-.venv/bin/python .claude/skills/add-recipe/generate_dish_image.py --json <recipe.json> --out /tmp/dish.png
-node .claude/skills/add-recipe/set-notion-cover.mjs --page <id> --file /tmp/dish.png
-```
-Liefert ein fotorealistisches, appetitliches Gericht-Foto (1024×1024, ohne Text). Braucht `GEMINI_API_KEY`.
+**Instagram-Reels**: das `og:image` hat den **Play-Button eingebrannt** — als Cover unschön →
+Blog-Foto oder Gemini nehmen (vorher kurz rückfragen, wenn es ein fremdes Foto eines nur ähnlichen
+Gerichts ist). Normale Foto-Posts sind unkritisch.
 
-**Instagram-Reels** (`/reel/…` oder Video-Posts): Das `og:image` ist die Share-Karte
-**mit eingebranntem Play-Button** — als Cover unschön. Einen sauberen Frame gibt der
-Reel öffentlich nicht her. Dann: ein passendes Foto aus einer **anderen Quelle**
-(Rezept-Blog-Hero-Bild via dessen `og:image`, `--image-url`) nehmen oder den User um
-ein Bild bitten. Vorher kurz rückfragen (fremdes Foto/Urheberrecht). Normale Foto-Posts
-sind unkritisch.
+**Cover ERSETZEN**: next/image cached pro Proxy-URL (= Slug, 1 Jahr). Lokal `rm -rf .next/cache/images`,
+damit das neue Bild erscheint; deployt greift es erst nach Cache-Ablauf / Neudeploy.
 
-**Cover ERSETZEN:** next/image cached das optimierte Bild pro Proxy-URL (= Slug, 1 Jahr).
-Bei gleichem Slug zeigt die App sonst das alte Bild. Lokal: `rm -rf .next/cache/images`
-(Dev-Server zeigt dann das neue). Deployt: greift erst nach Cache-Ablauf / Neudeploy.
+## 4. Sichtbarkeit / Verifikation
 
-### 4. Sichtbarkeit / Verifikation
+- Lokal (Dev): `http://localhost:3000/ideen` neu laden (Port ggf. anders, wenn 3000 belegt ist —
+  eigenen Dev-Server auf freiem Port starten). Schnellcheck: `curl -s http://localhost:3000/ideen | grep "<Name>"`.
+- Deployt: ISR mit 1-Jahr-Cache → `POST /api/revalidate` (Secret `REVALIDATE_SECRET`) oder Neubau.
 
-- Lokal (Dev): `http://localhost:3000/ideen` neu laden → Rezept + Cover sichtbar.
-  Schnellcheck: `curl -s http://localhost:3000/ideen | grep "<Name>"`.
-- Deployt: ISR mit 1-Jahr-Cache → `/api/revalidate` (Secret `REVALIDATE_SECRET`)
-  anstoßen oder neu bauen.
+## Import aus der „Rezeptideen"-DB (Sammel-Aufgabe)
+
+Data Source der Ideen-DB: `0c48fe8a-5329-46e7-9cf4-b1da95310ed8`. Pro Idee:
+1. Inhalt sichten (Seiten-Text **und** angehängte Medien/PDF — nicht nur die URL).
+2. Rezept beschaffen (Tabelle oben), auf Deutsch/metrisch übertragen.
+3. Proper Rezeptseite in der Rezepte-DB anlegen (Kategorie „Ideen") + Cover.
+4. Nach Erfolg die Ideen-Seite in den Papierkorb: `pages.update({page_id, in_trash: true})` (30 Tage wiederherstellbar).
+
+**Überspringen (nicht erfinden):** tote Links (DNS-Fehler/404/„Coming Soon"), reine Platzhalter
+(leere Seite, „Notiz ohne Titel", „TODO: …", nur ein Titel, reine Namensliste) und Videos, die kein
+Text/Frame hergeben. Übersprungene auflisten statt still zu löschen.
 
 ## Wichtig
 
-- **Immer Deutsch**, Mengen **metrisch** (g/ml/°C; `tsp`→`TL`, `tbsp`→`EL`). Inhaltlich originalgetreu — nichts dazuerfinden, nichts weglassen.
-- Cover **immer** setzen und **immer** in Notion hosten (Schritt 3).
-- Quell-Link in `userDefined:URL` hinterlegen.
-- Bei Unklarheit (Sichtbarkeit, Kategorie) kurz beim User rückfragen.
+- **Immer Deutsch**, Mengen **metrisch**. Inhaltlich originalgetreu — nichts dazuerfinden/weglassen (ergänzte Schritte per Callout kennzeichnen).
+- Cover **immer** setzen und **immer** in Notion hosten.
+- `userDefined:URL` = Quelle hinterlegen.
+- Zuerst Seiten-Inhalt prüfen, nicht nur die (evtl. tote) URL.
+- Bei Unklarheit (Sichtbarkeit, Kategorie, fremdes Cover-Foto) kurz beim User rückfragen.
