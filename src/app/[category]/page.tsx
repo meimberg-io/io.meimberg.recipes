@@ -4,9 +4,9 @@ import Header from '@/components/Header'
 import CategoryTabsClient from '@/components/CategoryTabsClient'
 import RecipeGridClient from '@/components/RecipeGridClient'
 import type { Recipe, Category } from '@/types/recipe'
-import { hasSubCategories, getFrontendCategories } from '@/config/categories'
+import { hasSubCategories } from '@/config/categories'
 import { getCategoryFromSlug, navigationTabs } from '@/config/navigation'
-import { getRecipes } from '@/lib/notion-recipe'
+import { getRecipesByCategory, getPopulatedCategories } from '@/lib/notion-recipe'
 
 interface CategoryPageProps {
   params: Promise<{ category: string }>
@@ -36,9 +36,8 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     }
   }
 
-  // Get recipe count for better description
-  const allRecipes = await getRecipes()
-  const recipeCount = allRecipes.filter((r: Recipe) => r.category === category).length
+  // Get recipe count for better description (filtered at the Notion query)
+  const recipeCount = (await getRecipesByCategory(category)).length
   const description = recipeCount > 0 
     ? `Entdecke ${recipeCount} ${recipeCount === 1 ? 'Rezept' : 'Rezepte'} in der Kategorie ${category}`
     : `Unsere ${category} Rezepte`
@@ -73,21 +72,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound()
   }
 
-  // Fetch recipes server-side on each request
-  const allRecipes = await getRecipes()
-  
-  // Filter recipes for this category
-  const filteredRecipes = allRecipes.filter((r: Recipe) => r.category === category)
-
-  // Get all categories that have recipes (from config)
-  const allCategories = getFrontendCategories()
-  const categories: Category[] = allCategories.filter((cat) => 
-    allRecipes.some((r: Recipe) => r.category === cat)
-  ) as Category[]
+  // Fetch only this category's recipes (filtered at the Notion query) plus the
+  // set of populated categories for the tab bar — never the whole database.
+  const [filteredRecipes, categories] = await Promise.all([
+    getRecipesByCategory(category),
+    getPopulatedCategories(),
+  ])
 
   // Check if this category has subcategories configured
-  const needsSubCategories = hasSubCategories(category) && 
-    allRecipes.some((r: Recipe) => r.category === category && r.subCategory)
+  const needsSubCategories = hasSubCategories(category) &&
+    filteredRecipes.some((r: Recipe) => r.subCategory)
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
 
