@@ -57,6 +57,7 @@ def main():
     if head[:8] == b"\x89PNG\r\n\x1a\n": mime = "image/png"
     elif head[:3] == b"\xff\xd8\xff": mime = "image/jpeg"
     elif head[:4] == b"RIFF" and b"WEBP" in head: mime = "image/webp"
+    elif head[:4] == b"%PDF": mime = "application/pdf"
     elif head[4:8] == b"ftyp": mime = "video/mp4"
     else: mime = "video/mp4"
 
