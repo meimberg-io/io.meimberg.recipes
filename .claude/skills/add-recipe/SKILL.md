@@ -100,6 +100,14 @@ node .claude/skills/add-recipe/set-notion-cover.mjs \
 Danach prüfen: `cover.type` muss `file` sein (nicht `external`), Host
 `prod-files-secure.s3…` (= Notion-gehostet).
 
+**Kein passendes Foto verfügbar** (nur Kochbuchseite, Play-Button-Thumbnail, gar kein Bild)?
+→ Cover mit **Gemini generieren** aus Titel + Rezept:
+```bash
+.venv/bin/python .claude/skills/add-recipe/generate_dish_image.py --json <recipe.json> --out /tmp/dish.png
+node .claude/skills/add-recipe/set-notion-cover.mjs --page <id> --file /tmp/dish.png
+```
+Liefert ein fotorealistisches, appetitliches Gericht-Foto (1024×1024, ohne Text). Braucht `GEMINI_API_KEY`.
+
 **Instagram-Reels** (`/reel/…` oder Video-Posts): Das `og:image` ist die Share-Karte
 **mit eingebranntem Play-Button** — als Cover unschön. Einen sauberen Frame gibt der
 Reel öffentlich nicht her. Dann: ein passendes Foto aus einer **anderen Quelle**
