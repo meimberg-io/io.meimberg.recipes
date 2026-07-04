@@ -2,7 +2,7 @@
 
 Next-App, die Rezepte aus einer **Notion-Datenbank** rendert. Die Pflege der Rezepte
 passiert **nicht im Code**, sondern in Notion — die App liest nur. Diese Datei
-beschreibt, wie man **neue Rezepte einpflegt** (insb. als „Intake"), damit es zu den
+beschreibt, wie man **neue Rezepte einpflegt** (insb. als „Ideen"), damit es zu den
 bestehenden Seiten konsistent ist.
 
 ## Architektur in einem Satz
@@ -34,7 +34,7 @@ Beim Anlegen via `notion-create-pages` → `properties`-Map. Eigenheiten beachte
 
 **Gültige `Kategorie`-Werte:** Vorspeisen, Pasta, Hauptgerichte, Suppen, Frühstück,
 Dessert, Specials, Grillen, Komponenten, Festmahl, Snippet, Noch aufzuschreiben,
-Rezeptideen, **Intake**.
+Rezeptideen, **Ideen** (früher „Intake").
 (Mapping Notion→App-Tab steht in `src/config/categories.ts`.)
 
 **Page-Icon:** Emoji setzen (`icon`-Feld). Konvention: Länderflagge nach Herkunft der
@@ -75,13 +75,13 @@ Erweiterungen (siehe Käsefondue als Referenz):
 
 Den Seitentitel **nicht** in den Content schreiben (steht in `Name`).
 
-## „Intake" einpflegen — der Standardfall
+## „Ideen" einpflegen — der Standardfall
 
-Intake = Eingangskorb für eingefangene Rezeptideen. Beim Anlegen:
+„Ideen" (früher „Intake") = Eingangskorb für eingefangene Rezeptideen. Beim Anlegen:
 
-- `Kategorie` = `"Intake"`
+- `Kategorie` = `"Ideen"`
 - `Status` = `"Idea"`
-- `Speisekarte` = `"__YES__"`  ← damit es im **Intake-Tab der App** auftaucht
+- `Speisekarte` = `"__YES__"`  ← damit es im **Ideen-Tab der App** auftaucht
 - `userDefined:URL` = Quell-Link, falls vorhanden
 - `Name`, `Kurzbeschreibung`, Icon setzen; `Tags`/`Vegetarisch` wenn bekannt
 - Content im obigen Format (mind. `# Zutaten` + `# Zubereitung`, soweit vorhanden)

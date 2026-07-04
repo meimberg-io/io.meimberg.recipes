@@ -55,10 +55,10 @@ export const navigationTabs: NavigationTab[] = [
     icon: '🧩',
   },
   {
-    id: 'Intake',
-    label: 'Intake',
-    slug: 'intake',
-    icon: '🥤',
+    id: 'Ideen',
+    label: 'Ideen',
+    slug: 'ideen',
+    icon: '💡',
   },
 ]
 

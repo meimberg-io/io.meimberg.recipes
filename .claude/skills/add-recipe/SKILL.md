@@ -1,6 +1,6 @@
 ---
 name: add-recipe
-description: Use when adding a new recipe to the Meimberg recipe app (io.meimberg.recipes) from a source — an Instagram link, a recipe URL, or pasted text. Extracts the recipe faithfully, creates the Notion page with the right properties (Intake defaults), follows the content conventions, and ALWAYS sets a Notion-hosted cover image. Triggers on "pflege das als Rezept/Intake ein", "füg das Rezept hinzu", "add this recipe", a pasted Instagram/recipe link with the intent to save it.
+description: Use when adding a new recipe to the Meimberg recipe app (io.meimberg.recipes) from a source — an Instagram link, a recipe URL, or pasted text. Extracts the recipe faithfully, creates the Notion page with the right properties (Kategorie „Ideen", früher „Intake"), follows the content conventions, and ALWAYS sets a Notion-hosted cover image. Triggers on "pflege das als Rezept/Ideen/Intake ein", "füg das Rezept hinzu", "add this recipe", a pasted Instagram/recipe link with the intent to save it.
 ---
 
 # Rezept einpflegen (Meimberg's Menu)
@@ -54,9 +54,9 @@ Zutatengruppe Mengen (z.B. „Kräuterbutter"), trotzdem so listen wie in der Qu
 Mit `notion-create-pages`, **parent = data_source_id** der Rezepte-Collection
 (`eddfc71c-2dca-4502-89bd-2685a6135fb3`).
 
-Properties (Intake-Standard, sofort sichtbar):
+Properties (Ideen-Standard, sofort sichtbar):
 - `Name` = Rezeptname
-- `Kategorie` = `"Intake"`
+- `Kategorie` = `"Ideen"`  (früher „Intake"; steuert den „Ideen"-Tab der App)
 - `Status` = `"Idea"`
 - `Speisekarte` = `"__YES__"`  (sonst kein App-Tab)
 - `Kurzbeschreibung` = Ein-Satz-Teaser
@@ -121,8 +121,8 @@ Bei gleichem Slug zeigt die App sonst das alte Bild. Lokal: `rm -rf .next/cache/
 
 ### 4. Sichtbarkeit / Verifikation
 
-- Lokal (Dev): `http://localhost:3000/intake` neu laden → Rezept + Cover sichtbar.
-  Schnellcheck: `curl -s http://localhost:3000/intake | grep "<Name>"`.
+- Lokal (Dev): `http://localhost:3000/ideen` neu laden → Rezept + Cover sichtbar.
+  Schnellcheck: `curl -s http://localhost:3000/ideen | grep "<Name>"`.
 - Deployt: ISR mit 1-Jahr-Cache → `/api/revalidate` (Secret `REVALIDATE_SECRET`)
   anstoßen oder neu bauen.
 

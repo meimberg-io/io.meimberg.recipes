@@ -34,10 +34,8 @@ export const categoryConfig = {
     notionCategories: ['Komponenten'],
     subCategories: undefined,
   },
-  'Intake': {
-    // In Notion wurde die Kategorie zu "Ideen" umbenannt; "Intake" bleibt als
-    // Alias erhalten, falls wieder umbenannt wird.
-    notionCategories: ['Ideen', 'Intake'],
+  'Ideen': {
+    notionCategories: ['Ideen'],
     subCategories: undefined,
   },
 } as const
