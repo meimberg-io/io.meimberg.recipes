@@ -24,8 +24,8 @@ const args = Object.fromEntries(
   }, [])
 )
 const pageId = args.page
-if (!pageId || (!args.instagram && !args['image-url'])) {
-  console.error('Usage: --page <id> (--instagram <postUrl> | --image-url <url>) [--filename name.jpg]')
+if (!pageId || (!args.instagram && !args['image-url'] && !args.file)) {
+  console.error('Usage: --page <id> (--instagram <postUrl> | --image-url <url> | --file <path>) [--filename name.jpg]')
   process.exit(1)
 }
 
@@ -55,16 +55,23 @@ async function instagramOgImage(postUrl) {
 async function main() {
   const notion = new Client({ auth: loadToken() })
 
-  const imageUrl = args.instagram ? await instagramOgImage(args.instagram) : args['image-url']
-  console.log('Image URL:', imageUrl.slice(0, 90), '…')
-
-  // 1) Download the bytes ourselves (don't rely on Notion reaching the source host).
-  const imgRes = await fetch(imageUrl, { headers: { 'User-Agent': BROWSER_UA } })
-  if (!imgRes.ok) throw new Error(`Image download failed: ${imgRes.status}`)
-  const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
-  const buf = Buffer.from(await imgRes.arrayBuffer())
+  let buf, contentType
+  if (args.file) {
+    // Local file (e.g. a frame extracted from a video via ffmpeg).
+    buf = readFileSync(args.file)
+    contentType = args.file.endsWith('.png') ? 'image/png' : 'image/jpeg'
+    console.log(`Local file: ${args.file} (${buf.length} bytes)`)
+  } else {
+    const imageUrl = args.instagram ? await instagramOgImage(args.instagram) : args['image-url']
+    console.log('Image URL:', imageUrl.slice(0, 90), '…')
+    // Download the bytes ourselves (don't rely on Notion reaching the source host).
+    const imgRes = await fetch(imageUrl, { headers: { 'User-Agent': BROWSER_UA } })
+    if (!imgRes.ok) throw new Error(`Image download failed: ${imgRes.status}`)
+    contentType = imgRes.headers.get('content-type') || 'image/jpeg'
+    buf = Buffer.from(await imgRes.arrayBuffer())
+    console.log(`Downloaded ${buf.length} bytes (${contentType})`)
+  }
   const filename = args.filename || (contentType.includes('png') ? 'cover.png' : 'cover.jpg')
-  console.log(`Downloaded ${buf.length} bytes (${contentType})`)
 
   // 2) Upload into Notion (single_part → Notion hosts it permanently).
   const upload = await notion.fileUploads.create({

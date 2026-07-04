@@ -27,10 +27,21 @@ Konventionen) steht in der Projekt-`CLAUDE.md` — bei Unklarheit dort nachschla
   dort steht meist das vollständige Rezept (das ist die beste Quelle).
 - **Vom User eingefügter Text**: direkt verwenden.
 
-Gibt eine Video-only-Quelle nichts Textbares her und ist **kein Browser verbunden**
-(`list_connected_browsers` leer) → **nicht erfinden**: den User bitten, seinen Browser
-zu verbinden oder den Rezepttext einzufügen. Fehlen nur die *Schritte* (Zutaten sind da),
-dürfen sie sinngemäß ergänzt und per Callout als ergänzt gekennzeichnet werden.
+**Video-only (TikTok/Reel/YouTube ohne Text, auch Notion-gehostete .mp4):** per
+**Gemini** extrahieren — `extract_recipe_gemini.py` lädt das Video (yt-dlp bzw. direkt
+bei .mp4-URLs) und lässt Gemini das Rezept als JSON ziehen (Deutsch, metrisch). Braucht
+`GEMINI_API_KEY` in der `.env` und einen Python mit `yt-dlp` + `google-genai`:
+```bash
+python3 -m venv .venv && .venv/bin/pip install yt-dlp google-genai   # einmalig
+.venv/bin/python .claude/skills/add-recipe/extract_recipe_gemini.py <url|mp4-url> --keep /tmp/v.mp4
+```
+Das JSON ins Content-Format übertragen. Cover: **Standbild aus dem Video** ziehen und
+per `--file` hosten (kein Play-Button): `ffmpeg -ss <~85% Laufzeit> -i v.mp4 -frames:v 1 frame.jpg`.
+Wenn Gemini `"kein_rezept": true` liefert → überspringen.
+
+Steht keine dieser Optionen zur Verfügung → **nicht erfinden**: den User um Browser-Verbindung
+oder den Rezepttext bitten. Fehlen nur die *Schritte* (Zutaten sind da), dürfen sie sinngemäß
+ergänzt und per Callout gekennzeichnet werden.
 
 **Immer ins Deutsche übertragen** (auch englische/andere Quellen) und **Mengen in
 metrische Einheiten umrechnen**: cups/oz/lb → g bzw. ml, °F → °C; `tsp` → `TL`,
