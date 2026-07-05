@@ -34,6 +34,10 @@ export const categoryConfig = {
     notionCategories: ['Komponenten'],
     subCategories: undefined,
   },
+  'Grillen': {
+    notionCategories: ['Grillen'],
+    subCategories: undefined,
+  },
   'Ideen': {
     notionCategories: ['Ideen'],
     subCategories: undefined,

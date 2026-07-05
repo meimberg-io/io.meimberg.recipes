@@ -55,6 +55,12 @@ export const navigationTabs: NavigationTab[] = [
     icon: '🧩',
   },
   {
+    id: 'Grillen',
+    label: 'Grillen',
+    slug: 'grillen',
+    icon: '🔥',
+  },
+  {
     id: 'Ideen',
     label: 'Ideen',
     slug: 'ideen',
