@@ -27,7 +27,7 @@ export default function NewBadge({ createdTime }: NewBadgeProps) {
   if (!isNew) return null
 
   return (
-    <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-md">
+    <span className="absolute top-2 left-2 z-10 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-white/25 shadow-md backdrop-blur-sm">
       Neu
     </span>
   )
