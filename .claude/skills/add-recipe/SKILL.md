@@ -59,7 +59,13 @@ Aus dem Repo-Root ausführen (findet `.env`). Gibt Rezept-JSON auf stdout aus
 ```
 - Notion-gehostete Medien (`prod-files-secure…`): erst die **frische signierte URL** aus dem
   Block holen (läuft nach Minuten ab), dann direkt übergeben.
-- `"kein_rezept": true` → überspringen (kein nachkochbares Rezept, z.B. reines Dish-Foto).
+- **Instagram-Reels**: yt-dlp scheitert ohne Login („Instagram sent an empty media response").
+  Reel vorher separat mit Browser-Cookies laden, dann die lokale Datei an das Skript geben:
+  `.venv/bin/yt-dlp --cookies-from-browser chrome -f mp4/best -o /tmp/reel.mp4 <reel-url>`
+  → `extract_recipe_gemini.py /tmp/reel.mp4`. Dieselbe `/tmp/reel.mp4` liefert per ffmpeg auch das
+  Cover-Standbild (Prio 3), spart den zweiten Download.
+- `"kein_rezept": true` → überspringen (kein nachkochbares Rezept, z.B. reines Dish-Foto oder
+  Teaser-Reel „Rezept folgt im nächsten Video").
 
 ### Browser (Claude in Chrome)
 
