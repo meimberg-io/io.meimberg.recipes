@@ -151,17 +151,11 @@ damit das neue Bild erscheint; deployt greift es erst nach Cache-Ablauf / Neudep
   eigenen Dev-Server auf freiem Port starten). Schnellcheck: `curl -s http://localhost:3000/ideen | grep "<Name>"`.
 - Deployt: ISR mit 1-Jahr-Cache → `POST /api/revalidate` (Secret `REVALIDATE_SECRET`) oder Neubau.
 
-## Import aus der „Rezeptideen"-DB (Sammel-Aufgabe)
+## Ganzen „Rezeptideen"-Eingangskorb abarbeiten?
 
-Data Source der Ideen-DB: `0c48fe8a-5329-46e7-9cf4-b1da95310ed8`. Pro Idee:
-1. Inhalt sichten (Seiten-Text **und** angehängte Medien/PDF — nicht nur die URL).
-2. Rezept beschaffen (Tabelle oben), auf Deutsch/metrisch übertragen.
-3. Proper Rezeptseite in der Rezepte-DB anlegen (Kategorie „Ideen") + Cover.
-4. Nach Erfolg die Ideen-Seite in den Papierkorb: `pages.update({page_id, in_trash: true})` (30 Tage wiederherstellbar).
-
-**Überspringen (nicht erfinden):** tote Links (DNS-Fehler/404/„Coming Soon"), reine Platzhalter
-(leere Seite, „Notiz ohne Titel", „TODO: …", nur ein Titel, reine Namensliste) und Videos, die kein
-Text/Frame hergeben. Übersprungene auflisten statt still zu löschen.
+Für die **Sammel-Aufgabe** (alle Ideen der „Rezeptideen"-DB in einem Rutsch) gibt es den eigenen
+Skill **`import-rezeptideen`** — er orchestriert Inventur → Triage → Batch → Aufräumen und wendet
+diesen `add-recipe`-Flow pro Idee an.
 
 ## Wichtig
 
