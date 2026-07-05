@@ -31,6 +31,7 @@ export interface Recipe {
   status?: string // Dynamic value from Notion
   statusColor?: string // Color from Notion status select
   content?: any[] // All richtext blocks from Notion page (preserves formatting)
+  createdTime?: string // Notion page created_time (ISO). Used for the "Neu" badge.
   slug: string
 }
 

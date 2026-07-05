@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Recipe } from '@/types/recipe'
 import ReactCountryFlag from 'react-country-flag'
+import NewBadge from './NewBadge'
 
 // Map flag emojis to country codes
 const flagToCountryCode: Record<string, string> = {
@@ -95,8 +96,10 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
     <Link
       href={`/recipes/${recipe.slug}`}
       onClick={handleClick}
-      className={`group block rounded-lg overflow-hidden hover:opacity-90 transition-opacity border ${cardColor}`}
+      className={`group relative block rounded-lg overflow-hidden hover:opacity-90 transition-opacity border ${cardColor}`}
     >
+      <NewBadge createdTime={recipe.createdTime} />
+
       {/* Image with flag overlay */}
       {recipe.coverImage ? (
         <div className="relative w-full aspect-[16/9] overflow-hidden">

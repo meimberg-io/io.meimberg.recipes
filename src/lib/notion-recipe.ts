@@ -252,6 +252,7 @@ function mapPageToRecipe(page: any): Recipe | null {
     categoryColor: getSelectColor(props['Kategorie']),
     url: getUrl(props['URL']),
     tags: getMultiSelect(props['Tags']),
+    createdTime: page.created_time,
     slug,
   }
 }
@@ -383,6 +384,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
       slug,
       pageIcon,
       categoryColor,
+      createdTime: page.created_time,
       content: content,
     }
   } catch (error) {
