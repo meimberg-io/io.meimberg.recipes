@@ -40,7 +40,7 @@ export default function RecipeGrid({ recipes, category, showSubCategories = fals
     })
 
     return (
-      <div className="px-8 py-6 space-y-8">
+      <div className="px-3 sm:px-4 md:px-8 py-6 space-y-8">
         {/* Render all groups dynamically with headers */}
         {groupKeys.map((groupKey) => {
           if (grouped[groupKey].length === 0) return null
@@ -70,7 +70,7 @@ export default function RecipeGrid({ recipes, category, showSubCategories = fals
   const sortedRecipes = [...recipes].sort((a, b) => a.title.localeCompare(b.title))
   
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 px-8 py-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 px-3 sm:px-4 md:px-8 py-6">
       {sortedRecipes.map((recipe) => (
         <RecipeCard 
           key={recipe.id} 
