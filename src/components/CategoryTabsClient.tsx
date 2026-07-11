@@ -65,7 +65,7 @@ export default function CategoryTabsClient({
       </div>
 
       {/* Mobile/Tablet navigation - visible below xl (1280px) */}
-      <nav className="sticky top-0 z-10 xl:hidden flex items-center justify-between px-4 py-4 bg-gray-800 border-b border-gray-800 border-t-2 border-t-gray-900">
+      <nav className="sticky top-0 z-20 xl:hidden flex items-center justify-between px-4 py-4 bg-gray-800 border-b border-gray-800 border-t-2 border-t-gray-900">
         {/* Current category button */}
         <button
           onClick={() => setIsMenuOpen(true)}
