@@ -7,6 +7,7 @@ import type { Recipe, Category } from '@/types/recipe'
 import { hasSubCategories } from '@/config/categories'
 import { getCategoryFromSlug, navigationTabs } from '@/config/navigation'
 import { getRecipesByCategory, getPopulatedCategories } from '@/lib/notion-recipe'
+import { baseUrl, isIndexableCategory, noindexRobots } from '@/lib/seo'
 
 interface CategoryPageProps {
   params: Promise<{ category: string }>
@@ -27,12 +28,12 @@ export const revalidate = 31536000
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { category: categorySlug } = await params
   const category: Category | null = getCategoryFromSlug(categorySlug) ?? null
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
-  
+
   if (!category) {
     return {
-      title: 'Bei Meimbergs - Rezepte',
+      title: 'Rezepte',
       description: 'Unsere Rezeptsammlung',
+      robots: noindexRobots,
     }
   }
 
@@ -43,8 +44,10 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     : `Unsere ${category} Rezepte`
 
   return {
-    title: `${category} - Bei Meimbergs`,
+    // The root layout appends " - Bei Meimbergs" via its title template.
+    title: category,
     description,
+    robots: isIndexableCategory(category) ? undefined : noindexRobots,
     alternates: {
       canonical: `${baseUrl}/${categorySlug}`,
     },
@@ -83,8 +86,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const needsSubCategories = hasSubCategories(category) &&
     filteredRecipes.some((r: Recipe) => r.subCategory)
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
-
   // Breadcrumb schema
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -117,6 +118,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         categories={categories}
         activeCategory={category}
       />
+      <div className="px-3 sm:px-4 md:px-8 pt-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-white">
+          {category}
+        </h1>
+        <p className="text-gray-400 mt-1">
+          {filteredRecipes.length}{' '}
+          {filteredRecipes.length === 1 ? 'Rezept' : 'Rezepte'} aus unserer Sammlung
+        </p>
+      </div>
       <RecipeGridClient
         recipes={filteredRecipes}
         category={category}

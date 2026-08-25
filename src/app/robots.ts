@@ -1,14 +1,17 @@
-import { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next'
+import { baseUrl } from '@/lib/seo'
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
-  
   return {
     rules: {
       userAgent: '*',
-      allow: '/',
+      // The cover images of every recipe are served through the proxy route;
+      // Googlebot must be able to fetch them for image and recipe rich results,
+      // so it is allowed back in explicitly (a longer Allow beats a Disallow).
+      allow: ['/', '/api/image-proxy'],
+      disallow: ['/api/', '/test'],
     },
-    sitemap: `${baseUrl}/api/sitemap.xml`,
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   }
 }
-

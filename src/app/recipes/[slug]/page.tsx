@@ -12,6 +12,8 @@ import type { Recipe, Category } from '@/types/recipe'
 import { getRecipes, getRecipeBySlug } from '@/lib/notion-recipe'
 import { getSlugFromCategory } from '@/config/navigation'
 import { getFrontendCategories } from '@/config/categories'
+import { buildRecipeSchema } from '@/lib/recipe-schema'
+import { baseUrl, isIndexableRecipe, noindexRobots } from '@/lib/seo'
 
 // Map flag emojis to country codes
 const flagToCountryCode: Record<string, string> = {
@@ -43,18 +45,17 @@ export const revalidate = 31536000
 export async function generateMetadata({ params }: RecipePageProps): Promise<Metadata> {
   const { slug } = await params
   const recipe = await getRecipeBySlug(slug)
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
-  
+
   if (!recipe) {
     return {
-      title: 'Rezept nicht gefunden - Bei Meimbergs',
+      title: 'Rezept nicht gefunden',
+      robots: noindexRobots,
     }
   }
 
   const description = recipe.description || `Rezept: ${recipe.title}`
   const keywords = recipe.tags ? [...recipe.tags] : []
   if (recipe.vegetarian) keywords.push(recipe.vegetarian)
-  if (recipe.status) keywords.push(recipe.status)
   keywords.push(recipe.category)
 
   // Use absolute URL for cover image (proxy URL)
@@ -65,9 +66,11 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
     : undefined
 
   return {
-    title: `${recipe.title} - Bei Meimbergs`,
+    // The root layout appends " - Bei Meimbergs" via its title template.
+    title: recipe.title,
     description,
     keywords: keywords.length > 0 ? keywords : undefined,
+    robots: isIndexableRecipe(recipe) ? undefined : noindexRobots,
     alternates: {
       canonical: `${baseUrl}/recipes/${slug}`,
     },
@@ -111,38 +114,12 @@ export default async function RecipePage({ params }: RecipePageProps) {
 
   // Get the category slug for the back link
   const categorySlug = getSlugFromCategory(recipe.category)
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://recipes.meimberg.io'
 
   // No need to pre-fetch - images now go through proxy API which fetches fresh URLs on-demand
 
-  // Generate structured data
-  const recipeSchema: Record<string, any> = {
-    '@context': 'https://schema.org',
-    '@type': 'Recipe',
-    name: recipe.title,
-    description: recipe.description || recipe.title,
-    recipeCategory: recipe.category,
-  }
-
-  if (recipe.coverImage) {
-    // Use absolute URL for structured data
-    const imageUrl = recipe.coverImage.startsWith('http')
-      ? recipe.coverImage
-      : `${baseUrl}${recipe.coverImage}`
-    recipeSchema.image = imageUrl
-  }
-
-  if (recipe.tags && recipe.tags.length > 0) {
-    recipeSchema.keywords = recipe.tags.join(', ')
-  }
-
-  // Add recipeCuisine if tags suggest a cuisine
-  const cuisineTags = recipe.tags?.filter(tag => 
-    ['Deutsch', 'Italienisch', 'Französisch', 'Asiatisch', 'Mexikanisch', 'Indisch', 'Griechisch', 'Spanisch', 'Thailändisch'].includes(tag)
-  )
-  if (cuisineTags && cuisineTags.length > 0) {
-    recipeSchema.recipeCuisine = cuisineTags[0]
-  }
+  // Recipe structured data, with ingredients and steps read back out of the
+  // Notion content — Google only shows recipe rich results when both are there.
+  const recipeSchema = buildRecipeSchema(recipe, baseUrl)
 
   // Breadcrumb schema
   const breadcrumbSchema = {
@@ -172,10 +149,12 @@ export default async function RecipePage({ params }: RecipePageProps) {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeSchema) }}
-      />
+      {recipeSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeSchema) }}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}

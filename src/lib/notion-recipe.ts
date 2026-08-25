@@ -1,4 +1,5 @@
 import { notion } from './notion'
+import { slugify } from './slug'
 import type { Recipe, Category } from '@/types/recipe'
 import { getFrontendCategory, getFrontendCategories, categoryConfig } from '@/config/categories'
 
@@ -70,10 +71,7 @@ async function getDataSourceId(): Promise<string> {
 
 
 function getSlug(title: string, id: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '') || id
+  return slugify(title, id)
 }
 
 function getCoverImage(cover: any): { url?: string; focalPoint?: { x: number; y: number } } {
@@ -253,6 +251,7 @@ function mapPageToRecipe(page: any): Recipe | null {
     url: getUrl(props['URL']),
     tags: getMultiSelect(props['Tags']),
     createdTime: page.created_time,
+    lastEditedTime: page.last_edited_time,
     slug,
   }
 }
@@ -385,6 +384,7 @@ export async function getRecipeById(id: string): Promise<Recipe | null> {
       pageIcon,
       categoryColor,
       createdTime: page.created_time,
+      lastEditedTime: page.last_edited_time,
       content: content,
     }
   } catch (error) {

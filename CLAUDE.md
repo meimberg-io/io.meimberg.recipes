@@ -93,6 +93,32 @@ Den Seitentitel **nicht** in den Content schreiben (steht in `Name`).
 > Bei Unklarheit (z.B. soll es schon sichtbar sein oder nur im Notion-Inbox liegen?)
 > kurz beim User rückfragen, bevor `Speisekarte` gesetzt wird.
 
+## SEO — was der Content in Notion steuert
+
+Die Rezeptseiten liefern `schema.org/Recipe`-JSON-LD aus. Zutaten und Schritte werden
+dafür **aus dem Notion-Content zurückgelesen** (`src/lib/recipe-schema.ts`) — die
+Content-Konvention oben ist damit kein Stil-Thema mehr, sondern entscheidet über die
+Google-Rich-Results:
+
+- Überschrift, die auf `Zutaten` matcht → alles darunter als `recipeIngredient`
+  (nur Bullet-/Nummern-Punkte). Ebene ist egal (`#` bis `###`).
+- Überschrift, die auf `Zubereitung` (auch `Anleitung`, `Schritte`, `Vorbereitung`)
+  matcht → alles darunter als `recipeInstructions`.
+- `###`-Untergruppen **innerhalb** der Zubereitung werden zu `HowToSection`;
+  `###`-Untergruppen innerhalb der Zutaten bleiben reine Optik.
+- Eine Portionsangabe wie `16 Portionen` oder `für 4 Personen` im Zutaten-Block oder
+  in einer Überschrift wird als `recipeYield` übernommen.
+- **Ohne Zutaten- und Zubereitungs-Block wird gar kein Recipe-Schema ausgeliefert**
+  (statt ungültiges Markup zu erzeugen). Ein Rezept ohne Content ist für Google wertlos.
+
+**Nicht indexiert** (`robots: noindex, follow`, und raus aus der Sitemap):
+die Kategorie `Ideen` und jedes Rezept mit `Status = Idea` — geregelt in `src/lib/seo.ts`.
+Wer ein Rezept in den Index bringen will, holt es aus `Ideen` raus und setzt einen
+Status ab `Initial`.
+
+**Sitemap:** `/sitemap.xml` (`src/app/sitemap.ts`), täglich revalidiert, `lastmod` aus
+Notions `last_edited_time`. Der alte Pfad `/api/sitemap.xml` leitet per 308 dorthin um.
+
 ## Nach dem Einpflegen: Sichtbarkeit
 
 Die Seiten sind **ISR mit `revalidate = 1 Jahr`** (`src/app/[category]/page.tsx`),

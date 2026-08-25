@@ -32,6 +32,7 @@ export interface Recipe {
   statusColor?: string // Color from Notion status select
   content?: any[] // All richtext blocks from Notion page (preserves formatting)
   createdTime?: string // Notion page created_time (ISO). Used for the "Neu" badge.
+  lastEditedTime?: string // Notion page last_edited_time (ISO). Used as sitemap lastmod.
   slug: string
 }
 

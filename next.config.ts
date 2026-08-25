@@ -7,6 +7,17 @@ const nextConfig: NextConfig = {
     // Optimize static generation
     optimizePackageImports: ['@notionhq/client'],
   },
+  async redirects() {
+    return [
+      // The sitemap used to live here and is still referenced by Google's copy
+      // of the old robots.txt.
+      {
+        source: '/api/sitemap.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      },
+    ]
+  },
   images: {
     // Next 16 blocks local images with a query string unless allow-listed here.
     localPatterns: [
