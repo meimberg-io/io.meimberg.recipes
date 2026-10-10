@@ -1,5 +1,0 @@
----
-title: Priject specific Rules
-globs: ["**/*"]
-alwaysApply: true
----
